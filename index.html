@@ -250,7 +250,7 @@ const SHEET_URL = "https://script.google.com/macros/s/AKfycbwlLqELK9XjgZjA5nk_eX
 /* ====== MULTIPLICADORES POR MODO ====== */
 const MODE_MULT = {facil:1, medio:1.5, dificil:2, aleatorio:2};
 
-const AVATARS=['\U0001F98A','\U0001F42F','\U0001F989','\U0001F427','\U0001F432','\U0001F985','\U0001F419','\U0001F981','\U0001F43C','\U0001F988','\U0001F99C','\U0001F43A'];
+const AVATARS=['🦊','🐯','🦉','🐧','🐲','🦅','🐙','🦁','🐼','🦈','🦜','🐺'];
 const AV_FREE = 5;
 const AV_UNLOCKS = [
   {i:5,  hint:'30 acertos no total',   test:s=>s.totalCorrect>=30},
@@ -315,11 +315,11 @@ const sfx={
   win:()=>beep([523,659,784,1046],0.15,'triangle'),
   tap:()=>beep([440],0.05,'sine')
 };
-$('sndBtn').onclick=()=>{soundOn=!soundOn;$('sndBtn').textContent=soundOn?'\U0001F50A':'\U0001F507';lsSet(LS.snd,soundOn?'1':'0');if(soundOn)sfx.tap()};
+$('sndBtn').onclick=()=>{soundOn=!soundOn;$('sndBtn').textContent=soundOn?'🔊':'🔇';lsSet(LS.snd,soundOn?'1':'0');if(soundOn)sfx.tap()};
 
 /* ---------- INIT HOME ---------- */
 function initHome(){
-  soundOn = lsGet(LS.snd,'1')==='1'; $('sndBtn').textContent=soundOn?'\U0001F50A':'\U0001F507';
+  soundOn = lsGet(LS.snd,'1')==='1'; $('sndBtn').textContent=soundOn?'🔊':'🔇';
   playerName = lsGet(LS.name,''); $('homeName').value=playerName;
   chosenAv = lsGet(LS.av,AVATARS[0]);
   const unlocked=unlockedSet();
@@ -329,13 +329,13 @@ function initHome(){
     const b=document.createElement('button');
     const locked=!unlocked.has(i);
     b.className='av'+(a===chosenAv?' on':'')+(locked?' locked':'');
-    b.textContent=locked?'\U0001F512':a;
+    b.textContent=locked?'🔒':a;
     if(locked){const u=AV_UNLOCKS.find(x=>x.i===i);b.title=u?('Desbloqueia: '+u.hint):'Bloqueado';}
     else b.onclick=()=>{chosenAv=a;lsSet(LS.av,a);sfx.tap();document.querySelectorAll('.av').forEach(x=>x.classList.remove('on'));b.classList.add('on')};
     box.appendChild(b);
   });
   const best=parseInt(lsGet(LS.best,'0'))||0;
-  $('homeBest').textContent=best>0?('\U0001F3C5 Seu recorde: '+best+' pontos'):'';
+  $('homeBest').textContent=best>0?('🏅 Seu recorde: '+best+' pontos'):'';
 }
 $('levels').addEventListener('click',e=>{const b=e.target.closest('.lvl');if(!b)return;sfx.tap();document.querySelectorAll('.lvl').forEach(x=>x.classList.remove('on'));b.classList.add('on');chosenLevel=b.dataset.l});
 
@@ -369,7 +369,7 @@ function comboMult(st){if(st>=5)return 3;if(st>=4)return 2.5;if(st>=3)return 2;i
 function buildRouteMap(){
   const m=$('routemap');if(!m)return;
   let dots='';ROUTE.forEach(c=>{dots+='<span class="route-dot"><b>•</b><em>'+c+'</em></span>'});
-  m.innerHTML='<div class="route-line"><i id="routefill"></i></div><div class="route-dots">'+dots+'</div><div class="route-ship" id="routeship">\U0001F6A2</div>';
+  m.innerHTML='<div class="route-line"><i id="routefill"></i></div><div class="route-dots">'+dots+'</div><div class="route-ship" id="routeship">🚢</div>';
   updateRouteMap();
 }
 function updateRouteMap(){
@@ -379,7 +379,7 @@ function updateRouteMap(){
 }
 function updateCombo(){
   const cm=comboMult(streak), el=$('combo');if(!el)return;
-  if(streak>=2 && cm>1){el.textContent='\U0001F525 Combo ×'+cm;el.classList.remove('hide')}
+  if(streak>=2 && cm>1){el.textContent='🔥 Combo ×'+cm;el.classList.remove('hide')}
   else el.classList.add('hide');
 }
 
@@ -421,7 +421,7 @@ function choose(i,btn){
     score+=pts; correctCount++;
     let extra='';if(cm>1)extra+=' · combo ×'+cm;if(mm>1)extra+=' · modo ×'+mm;
     const det='<small>'+diffBonus+' '+LABELS[q.d]+' + '+timeBonus+' tempo'+extra+'</small>';
-    if(streak>=3){fb.innerHTML='\U0001F525 '+streak+' seguidas! <b>+'+pts+'</b>'+det;sfx.streak()}
+    if(streak>=3){fb.innerHTML='🔥 '+streak+' seguidas! <b>+'+pts+'</b>'+det;sfx.streak()}
     else{fb.innerHTML='✓ Acertou! <b>+'+pts+'</b>'+det;sfx.right()}
     fb.className='feedback ok';
   }else{
@@ -436,11 +436,11 @@ function choose(i,btn){
 /* ---------- BADGES / ESTRELAS / PATENTE ---------- */
 function earnedBadges(){
   const b=[];
-  if(correctCount===PER_PARTIDA)b.push('\U0001F30D Volta ao mundo perfeita!');
-  if(correctCount>=PER_PARTIDA*0.8)b.push('\U0001F9ED Navegador de elite');
-  if(maxStreak>=5)b.push('\U0001F525 '+maxStreak+' em sequencia');
+  if(correctCount===PER_PARTIDA)b.push('🌍 Volta ao mundo perfeita!');
+  if(correctCount>=PER_PARTIDA*0.8)b.push('🧭 Navegador de elite');
+  if(maxStreak>=5)b.push('🔥 '+maxStreak+' em sequencia');
   const dificeis=log.filter((l,k)=>deck[k]&&deck[k].d==='dificil'&&l.your===l.correct).length;
-  if(dificeis>=3)b.push('\U0001F9E0 Mestre das dificeis');
+  if(dificeis>=3)b.push('🧠 Mestre das dificeis');
   if(totalTime< PER_PARTIDA*8 && correctCount>=PER_PARTIDA*0.6)b.push('⚡ Raio veloz');
   if(correctCount>=PER_PARTIDA*0.5 && !b.length)b.push('⚓ Bom marinheiro');
   return b;
@@ -472,17 +472,17 @@ function finish(){
   $('stCorrect').textContent=correctCount+'/'+PER_PARTIDA;
   $('stStreak').textContent=maxStreak;$('stTime').textContent=Math.round(totalTime)+'s';
   let medal,msg;
-  if(st>=5){medal='\U0001F947';msg='Capitao da viagem! Conhece o livro de cabo a rabo.'}
-  else if(st>=4){medal='\U0001F948';msg='Excelente navegador! Quase tudo no lugar.'}
-  else if(st>=3){medal='\U0001F949';msg='Bom marinheiro! Vale reler alguns trechos.'}
-  else{medal='\U0001F9ED';msg='A viagem mal comecou - bora reler e tentar de novo!'}
+  if(st>=5){medal='🥇';msg='Capitao da viagem! Conhece o livro de cabo a rabo.'}
+  else if(st>=4){medal='🥈';msg='Excelente navegador! Quase tudo no lugar.'}
+  else if(st>=3){medal='🥉';msg='Bom marinheiro! Vale reler alguns trechos.'}
+  else{medal='🧭';msg='A viagem mal comecou - bora reler e tentar de novo!'}
   $('medal').textContent=medal;$('rmsg').textContent=msg;
   const prevBest=parseInt(lsGet(LS.best,'0'))||0, rec=score>prevBest;
   const rl=$('recordLine');rl.classList.remove('big');
-  if(rec){lsSet(LS.best,String(score));rl.textContent='\U0001F389 NOVO RECORDE! '+score+' pontos';rl.classList.add('big')}
+  if(rec){lsSet(LS.best,String(score));rl.textContent='🎉 NOVO RECORDE! '+score+' pontos';rl.classList.add('big')}
   else rl.textContent='Seu recorde: '+prevBest+' pontos';
   const bs=earnedBadges();
-  if(varietyBonus>0)bs.unshift('\U0001F3B2 Bonus variedade +'+varietyBonus);
+  if(varietyBonus>0)bs.unshift('🎲 Bonus variedade +'+varietyBonus);
   const bbox=$('badges');bbox.innerHTML='';
   bs.forEach((t,k)=>{setTimeout(()=>{const sp=document.createElement('span');sp.className='bdg';sp.textContent=t;bbox.appendChild(sp)},k*220)});
   const stats=statsGet(), before=unlockedSet();
@@ -496,12 +496,12 @@ function finish(){
   sfx.win();show('result');
   if(rec)confetti();
   if(bs.length)showBadgeToast(bs[0]);
-  newly.forEach((x,k)=>setTimeout(()=>showBadgeToast('\U0001F513 Novo avatar: '+AVATARS[x]),(k+1)*1500));
+  newly.forEach((x,k)=>setTimeout(()=>showBadgeToast('🔓 Novo avatar: '+AVATARS[x]),(k+1)*1500));
   autoSave();
 }
 function showBadgeToast(t){
   const el=document.createElement('div');el.className='badge-toast';
-  el.innerHTML='<span class="bi">\U0001F3C5</span>'+t;
+  el.innerHTML='<span class="bi">🏅</span>'+t;
   document.body.appendChild(el);setTimeout(()=>el.remove(),2600);
 }
 
@@ -515,7 +515,7 @@ function renderRank(list,myKey,status){
     const div=document.createElement('div');
     const isMe=myKey&&(r.k===myKey);
     div.className='rankrow'+(isMe?' me':'');
-    div.innerHTML='<span><span class="pos">'+(i+1)+'º</span><span class="av-s">'+(r.a||'\U0001F9ED')+'</span>'+r.n+'</span><span>'+r.s+' pts</span>';
+    div.innerHTML='<span><span class="pos">'+(i+1)+'º</span><span class="av-s">'+(r.a||'🧭')+'</span>'+r.n+'</span><span>'+r.s+' pts</span>';
     box.appendChild(div);
   });
   if(!list.length)box.innerHTML='<div class="rankrow">Ainda sem placar - seja o primeiro!</div>';
@@ -538,11 +538,11 @@ async function autoSave(){
       return;
     }catch(e){renderRank(localRank(),myKey,'⚠️ Sem conexao - salvo neste aparelho');return}
   }
-  renderRank(localRank(),myKey,'\U0001F4F1 Salvo neste aparelho');
+  renderRank(localRank(),myKey,'📱 Salvo neste aparelho');
 }
 $('seeRank').onclick=async()=>{
   show('result');
-  $('medal').textContent='\U0001F3C6';$('bigScore').textContent='—';
+  $('medal').textContent='🏆';$('bigScore').textContent='—';
   $('recordLine').classList.remove('big');$('recordLine').textContent='';
   $('stars').textContent='';$('patente').textContent='';$('pctAcerto').textContent='';
   $('rmsg').textContent='Placar dos exploradores';
@@ -551,10 +551,10 @@ $('seeRank').onclick=async()=>{
   if(SHEET_URL){
     try{const res=await fetch(SHEET_URL+'?t='+Date.now());const data=await res.json();
       const list=(data.rows||data).map(r=>({k:r.k,n:r.n,a:r.a,s:Number(r.s),g:r.g}));
-      renderRank(list,null,'\U0001F310 Placar online da turma');return;
+      renderRank(list,null,'🌐 Placar online da turma');return;
     }catch{renderRank(localRank(),null,'⚠️ Sem conexao - placar local');return}
   }
-  renderRank(localRank(),null,'\U0001F4F1 Placar deste aparelho');
+  renderRank(localRank(),null,'📱 Placar deste aparelho');
 };
 
 /* ---------- REVISAO ---------- */
@@ -562,7 +562,7 @@ $('revBtn').onclick=()=>{
   const box=$('revBox'); if(!box.classList.contains('hide')){box.classList.add('hide');return}
   const list=$('revlist');list.innerHTML='';
   const errs=log.filter(l=>l.your!==l.correct);
-  if(!errs.length){list.innerHTML='<div class="revq"><div class="qq">\U0001F389 Voce nao errou nenhuma! Mandou muito bem.</div></div>'}
+  if(!errs.length){list.innerHTML='<div class="revq"><div class="qq">🎉 Voce nao errou nenhuma! Mandou muito bem.</div></div>'}
   else errs.forEach(l=>{
     const d=document.createElement('div');d.className='revq';
     let h='<div class="qq">'+l.q+'</div>';
@@ -574,7 +574,7 @@ $('revBtn').onclick=()=>{
   box.classList.remove('hide');
 };
 $('shareWa').onclick=()=>{
-  const txt='\U0001F30D Quiz do Netao - A Volta ao Mundo em 80 Dias!\n'+chosenAv+' '+playerName+' fez '+score+' pontos ('+correctCount+'/'+PER_PARTIDA+' acertos)!\nSera que voce me supera? Joga aqui: '+window.location.href;
+  const txt='🌍 Quiz do Netao - A Volta ao Mundo em 80 Dias!\n'+chosenAv+' '+playerName+' fez '+score+' pontos ('+correctCount+'/'+PER_PARTIDA+' acertos)!\nSera que voce me supera? Joga aqui: '+window.location.href;
   window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
 };
 $('start').onclick=startGame;
