@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Quiz do Netão - A Volta ao Mundo em 80 Dias</title>
+<style>
+  :root{
+    --ink:#1a2238; --paper:#f3ead6; --paper2:#ece0c4;
+    --sea:#2c6e8f; --sea-dk:#1d4f68; --brass:#c9962a; --brass-dk:#a87a18;
+    --coral:#c44a3d; --green:#3f7d54; --line:#cbb98f;
+    --shadow:rgba(26,34,56,.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif;
+    background:var(--ink);
+    color:var(--ink);
+    display:flex;justify-content:center;align-items:center;
+    padding:14px;min-height:100dvh;
+    background-image:radial-gradient(circle at 20% 10%, #243059 0, var(--ink) 55%);
+  }
+  .app{
+    width:100%;max-width:440px;
+    background:var(--paper);
+    border-radius:22px;
+    box-shadow:0 18px 50px var(--shadow), inset 0 0 0 2px var(--paper2);
+    overflow:hidden;position:relative;
+  }
+  /* faint compass watermark */
+  .app::before{
+    content:"";position:absolute;right:-40px;top:-40px;width:200px;height:200px;
+    border:3px solid var(--line);border-radius:50%;opacity:.25;
+    background:
+      conic-gradient(from 0deg, transparent 0 44deg, var(--line) 45deg 46deg, transparent 47deg 90deg) ;
+    pointer-events:none;
+  }
+  .screen{padding:26px 22px 30px;position:relative;z-index:1}
+  .hide{display:none!important}
+
+  /* ---------- HOME ---------- */
+  .eyebrow{
+    font-size:11px;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--sea-dk);font-weight:bold;margin-bottom:10px;
+  }
+  h1{
+    font-family:Georgia,'Times New Roman',serif;
+    font-size:34px;line-height:1.02;color:var(--ink);
+    letter-spacing:-.5px;margin-bottom:6px;
+  }
+  h1 .big{display:block;font-size:52px;color:var(--coral);
+    text-shadow:1px 1px 0 var(--brass);}
+  .subtitle{font-size:14px;color:var(--sea-dk);margin:10px 0 22px;font-style:italic}
+  .route{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+    font-size:11px;color:var(--sea-dk);margin-bottom:24px;
+    padding:10px 12px;background:var(--paper2);border-radius:12px;
+    border:1px dashed var(--line);
+  }
+  .route b{color:var(--coral)}
+  .label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--sea-dk);font-weight:bold;margin-bottom:9px;display:block}
+  .levels{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:22px}
+  .lvl{
+    padding:13px 10px;border-radius:13px;border:2px solid var(--line);
+    background:var(--paper);cursor:pointer;text-align:left;transition:.15s;
+    font-size:13px;font-weight:bold;color:var(--ink);
+  }
+  .lvl small{display:block;font-weight:normal;font-size:10.5px;color:var(--sea-dk);margin-top:3px}
+  .lvl.on{border-color:var(--coral);background:#fff;box-shadow:0 4px 0 var(--coral)}
+  .lvl:active{transform:translateY(2px)}
+  .lvl[data-l="facil"].on{border-color:var(--green);box-shadow:0 4px 0 var(--green)}
+  .lvl[data-l="medio"].on{border-color:var(--brass-dk);box-shadow:0 4px 0 var(--brass-dk)}
+  .lvl[data-l="dificil"].on{border-color:var(--coral);box-shadow:0 4px 0 var(--coral)}
+  .lvl[data-l="aleatorio"].on{border-color:var(--sea);box-shadow:0 4px 0 var(--sea)}
+
+  .btn{
+    width:100%;padding:16px;border:none;border-radius:14px;
+    font-size:17px;font-weight:bold;cursor:pointer;letter-spacing:.02em;
+    font-family:inherit;transition:.15s;
+  }
+  .btn-go{background:var(--coral);color:#fff;box-shadow:0 5px 0 #8f3025}
+  .btn-go:active{transform:translateY(3px);box-shadow:0 2px 0 #8f3025}
+  .btn-ghost{background:transparent;color:var(--sea-dk);border:2px solid var(--line);box-shadow:none;margin-top:10px;font-size:14px;padding:12px}
+
+  /* ---------- QUIZ ---------- */
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .pill{font-size:12px;font-weight:bold;color:var(--sea-dk)}
+  .pill .score{color:var(--coral)}
+  .progress{height:8px;background:var(--paper2);border-radius:99px;overflow:hidden;margin:10px 0 4px}
+  .progress > i{display:block;height:100%;background:var(--sea);width:0;transition:width .3s}
+  .timer-wrap{height:6px;background:var(--paper2);border-radius:99px;overflow:hidden;margin-bottom:18px}
+  .timer-wrap > i{display:block;height:100%;background:var(--brass);width:100%}
+  .timer-wrap > i.warn{background:var(--coral)}
+  .dchip{display:inline-block;font-size:10px;font-weight:bold;text-transform:uppercase;
+    letter-spacing:.1em;padding:3px 9px;border-radius:99px;margin-bottom:12px}
+  .dchip.facil{background:#dcefe0;color:var(--green)}
+  .dchip.medio{background:#fdeecb;color:var(--brass-dk)}
+  .dchip.dificil{background:#fbdcd8;color:var(--coral)}
+  .qtext{font-family:Georgia,serif;font-size:21px;line-height:1.25;margin-bottom:20px;min-height:84px}
+  .opts{display:flex;flex-direction:column;gap:11px}
+  .opt{
+    text-align:left;padding:15px 16px;border-radius:13px;border:2px solid var(--line);
+    background:#fff;cursor:pointer;font-size:15px;font-family:inherit;color:var(--ink);
+    display:flex;align-items:center;gap:11px;transition:.12s;
+  }
+  .opt:active{transform:scale(.99)}
+  .opt .key{flex:0 0 26px;height:26px;border-radius:7px;background:var(--paper2);
+    display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;color:var(--sea-dk)}
+  .opt.correct{border-color:var(--green);background:#e7f8ea}
+  .opt.correct .key{background:var(--green);color:#fff}
+  .opt.wrong{border-color:var(--coral);background:#fbe6e3}
+  .opt.wrong .key{background:var(--coral);color:#fff}
+  .opt:disabled{cursor:default}
+  .feedback{margin-top:16px;font-size:14px;font-weight:bold;min-height:24px;text-align:center}
+  .feedback.ok{color:var(--green)}
+  .feedback.no{color:var(--coral)}
+
+  /* ---------- RESULT ---------- */
+  .result{text-align:center}
+  .medal{font-size:64px;line-height:1;margin:6px 0 4px}
+  .grade{font-family:Georgia,serif;font-size:66px;color:var(--coral);line-height:1}
+  .grade small{font-size:24px;color:var(--sea-dk)}
+  .rmsg{font-size:16px;margin:8px 0 20px;color:var(--sea-dk);font-style:italic}
+  .stats{display:flex;gap:10px;margin-bottom:20px}
+  .stat{flex:1;background:var(--paper2);border-radius:13px;padding:13px}
+  .stat b{display:block;font-size:26px;color:var(--ink)}
+  .stat span{font-size:11px;color:var(--sea-dk);text-transform:uppercase;letter-spacing:.08em}
+  .ranktitle{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sea-dk);font-weight:bold;text-align:left;margin:6px 0 8px}
+  .rankrow{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-radius:10px;background:#fff;border:1px solid var(--line);margin-bottom:6px;font-size:13px}
+  .rankrow.me{border-color:var(--coral);background:#fff6f4;font-weight:bold}
+  .rankrow .pos{color:var(--brass-dk);font-weight:bold;margin-right:8px}
+  .name-in{width:100%;padding:13px;border:2px solid var(--line);border-radius:12px;font-size:15px;font-family:inherit;margin-bottom:12px;text-align:center}
+  .foot{text-align:center;font-size:10.5px;color:var(--sea-dk);opacity:.7;margin-top:18px}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HOME -->
+  <section id="home" class="screen">
+    <div class="eyebrow">Diário de Bordo &middot; Júlio Verne</div>
+    <h1>Quiz do <span class="big">Netão</span></h1>
+    <div class="subtitle">A Volta ao Mundo em 80 Dias</div>
+    <div class="route">
+      <b>Londres</b> → Suez → Bombaim → Calcutá → Hong Kong → Yokohama → S. Francisco → N. York → <b>Londres</b>
+    </div>
+
+    <span class="label">Escolha a dificuldade</span>
+    <div class="levels" id="levels">
+      <button class="lvl on" data-l="aleatorio">🎲 Aleatório<small>Mistura tudo, fácil e difícil</small></button>
+      <button class="lvl" data-l="facil">🟢 Fácil<small>Memória da história</small></button>
+      <button class="lvl" data-l="medio">🟡 Médio<small>Entender o enredo</small></button>
+      <button class="lvl" data-l="dificil">🔴 Difícil<small>Interpretar e pensar</small></button>
+    </div>
+
+    <button class="btn btn-go" id="start">Zarpar! ⚓ (15 perguntas)</button>
+    <button class="btn btn-ghost" id="seeRank">🏆 Ver placar</button>
+    <div class="foot">Feito com carinho • offline • partilhável</div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="screen hide">
+    <div class="topbar">
+      <span class="pill">Pergunta <b id="qnum">1</b>/15</span>
+      <span class="pill">Pontos: <span class="score" id="livescore">0</span></span>
+    </div>
+    <div class="progress"><i id="prog"></i></div>
+    <div class="timer-wrap"><i id="timerbar"></i></div>
+    <span class="dchip" id="dchip">médio</span>
+    <div class="qtext" id="qtext"></div>
+    <div class="opts" id="opts"></div>
+    <div class="feedback" id="feedback"></div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="screen hide result">
+    <div class="medal" id="medal">🏅</div>
+    <div class="grade"><span id="gradeNum">0</span><small>/10</small></div>
+    <div class="rmsg" id="rmsg"></div>
+    <div class="stats">
+      <div class="stat"><b id="stCorrect">0</b><span>Acertos</span></div>
+      <div class="stat"><b id="stStreak">0</b><span>Maior sequência</span></div>
+      <div class="stat"><b id="stTime">0s</b><span>Tempo total</span></div>
+    </div>
+
+    <input class="name-in" id="playerName" maxlength="14" placeholder="Seu nome p/ o placar">
+    <button class="btn btn-go" id="saveScore">Salvar no placar 🏆</button>
+
+    <div id="rankBox" class="hide">
+      <div class="ranktitle">🏆 Melhores do Netão</div>
+      <div id="ranklist"></div>
+    </div>
+
+    <button class="btn btn-ghost" id="again">Jogar de novo 🔄</button>
+    <div class="foot">Mande um print no grupo e desafie os colegas!</div>
+  </section>
+
+</div>
+
+<script>
+const BANCO = [{"n": "Quem faz a aposta de dar a volta ao mundo em 80 dias?", "o": ["Phileas Fogg", "Passepartout", "Detetive Fix", "Sir Francis"], "c": 0, "d": "facil"}, {"n": "Em que cidade Phileas Fogg mora?", "o": ["Paris", "Londres", "Nova York", "Roma"], "c": 1, "d": "facil"}, {"n": "Qual é o nome do criado francês de Fogg?", "o": ["Passepartout", "Fix", "Aouda", "Stuart"], "c": 0, "d": "facil"}, {"n": "Em qual clube Fogg faz a aposta?", "o": ["Clube dos Viajantes", "Reform Club", "Clube Real", "Clube de Londres"], "c": 1, "d": "facil"}, {"n": "Quantos dias Fogg aposta que levará para dar a volta ao mundo?", "o": ["100 dias", "60 dias", "80 dias", "90 dias"], "c": 2, "d": "facil"}, {"n": "Em qual ano se passa a história?", "o": ["1872", "1950", "1800", "1920"], "c": 0, "d": "medio"}, {"n": "Quanto dinheiro Fogg aposta?", "o": ["10 mil libras", "20 mil libras", "5 mil libras", "50 mil libras"], "c": 1, "d": "medio"}, {"n": "Quem persegue Fogg achando que ele é um ladrão de banco?", "o": ["Passepartout", "Detetive Fix", "Sir Francis", "O capitão"], "c": 1, "d": "facil"}, {"n": "Por que o detetive Fix segue Fogg?", "o": ["É amigo dele", "Acha que Fogg roubou um banco", "Quer viajar de graça", "É parente"], "c": 1, "d": "medio"}, {"n": "Qual mulher Fogg salva durante a viagem?", "o": ["Aouda", "Maria", "Helena", "Joana"], "c": 0, "d": "facil"}, {"n": "Em que país Fogg salva essa mulher de ser sacrificada?", "o": ["China", "Índia", "Japão", "Egito"], "c": 1, "d": "medio"}, {"n": "Que animal Fogg compra para atravessar parte da Índia?", "o": ["Camelo", "Cavalo", "Elefante", "Burro"], "c": 2, "d": "facil"}, {"n": "Qual é a personalidade marcante de Fogg?", "o": ["Falante e bagunceiro", "Frio, pontual e calmo", "Medroso", "Preguiçoso"], "c": 1, "d": "medio"}, {"n": "Como Fogg costuma medir tudo na vida?", "o": ["Pelo dinheiro", "Pelo tempo e pela precisão", "Pela sorte", "Pela comida"], "c": 1, "d": "medio"}, {"n": "Por qual cidade do Egito a viagem passa?", "o": ["Cairo", "Suez", "Alexandria", "Luxor"], "c": 1, "d": "medio"}, {"n": "Qual cidade indiana aparece na rota?", "o": ["Bombaim", "Tóquio", "Pequim", "Lisboa"], "c": 0, "d": "medio"}, {"n": "De qual cidade chinesa eles partem rumo ao Japão?", "o": ["Xangai", "Hong Kong", "Cantão", "Pequim"], "c": 1, "d": "medio"}, {"n": "Qual cidade japonesa aparece na viagem?", "o": ["Yokohama", "Osaka", "Quioto", "Nagoya"], "c": 0, "d": "medio"}, {"n": "Em qual cidade dos EUA eles desembarcam vindos do Japão?", "o": ["Nova York", "São Francisco", "Chicago", "Boston"], "c": 1, "d": "medio"}, {"n": "Qual a última grande cidade dos EUA antes de voltar à Europa?", "o": ["Nova York", "Miami", "Dallas", "Seattle"], "c": 0, "d": "medio"}, {"n": "O que Passepartout queria, no fundo, antes da aposta?", "o": ["Uma vida agitada", "Uma vida calma e tranquila", "Ficar rico", "Virar detetive"], "c": 1, "d": "dificil"}, {"n": "Como eles atravessam grande parte dos oceanos?", "o": ["De avião", "De navio a vapor", "De submarino", "Nadando"], "c": 1, "d": "facil"}, {"n": "Que meio de transporte cruza os Estados Unidos na história?", "o": ["Carro", "Trem (ferrovia)", "Avião", "Barco"], "c": 1, "d": "facil"}, {"n": "O que Fogg faz quando o navio está sem carvão suficiente?", "o": ["Desiste", "Manda queimar partes de madeira do navio", "Volta para Londres", "Espera mais carvão"], "c": 1, "d": "dificil"}, {"n": "Por que Passepartout se mete em encrencas no Japão?", "o": ["Fica sem dinheiro e sem o patrão", "Briga com Fix", "Perde o passaporte", "Adoece"], "c": 0, "d": "dificil"}, {"n": "O que torna Fogg diferente de um aventureiro comum?", "o": ["Ele age com cálculo e frieza, não por emoção", "Ele adora perigo", "Ele é desorganizado", "Ele viaja sem planejar"], "c": 0, "d": "dificil"}, {"n": "Quando Fogg para a viagem para salvar Passepartout, o que isso mostra?", "o": ["Que ele é distraído", "Que por trás da frieza há lealdade e bondade", "Que ele desistiu da aposta", "Que ele tem medo"], "c": 1, "d": "dificil"}, {"n": "Quem é Sir Francis Cromarty?", "o": ["Um general que viaja com eles na Índia", "O dono do banco", "Irmão de Fogg", "Um vilão"], "c": 0, "d": "dificil"}, {"n": "O que o detetive Fix faz para atrasar Fogg?", "o": ["Esconde o dinheiro", "Tenta prendê-lo e atrapalha a viagem", "Rouba o navio", "Mente para Aouda"], "c": 1, "d": "medio"}, {"n": "No fim, o que Fix descobre sobre o verdadeiro ladrão do banco?", "o": ["Era Fogg mesmo", "Outra pessoa já tinha sido pega", "Era Passepartout", "Nunca descobre"], "c": 1, "d": "dificil"}, {"n": "O que Fogg pensa que aconteceu quando chega a Londres?", "o": ["Que ganhou a aposta", "Que perdeu por um dia de atraso", "Que sobrou tempo", "Que ninguém se importava"], "c": 1, "d": "dificil"}, {"n": "Qual foi o erro de cálculo que mudou tudo no final?", "o": ["Fogg contou um dia a menos sem perceber", "Esqueceu de comer", "Perdeu o relógio", "Errou o navio"], "c": 0, "d": "dificil"}, {"n": "Por que Fogg na verdade ganhou um dia inteiro?", "o": ["Por dormir mais", "Por viajar para o leste e ganhar tempo nos fusos horários", "Por andar mais rápido", "Por sorte"], "c": 1, "d": "dificil"}, {"n": "Quem avisa Fogg de que ainda dá tempo de ganhar a aposta?", "o": ["Passepartout", "Fix", "Aouda", "Sir Francis"], "c": 0, "d": "dificil"}, {"n": "O que acontece entre Fogg e Aouda no final?", "o": ["Eles se casam", "Eles brigam", "Ela volta para a Índia", "Nada"], "c": 0, "d": "medio"}, {"n": "Qual sentimento move Passepartout na história?", "o": ["Ganância", "Lealdade ao seu patrão", "Inveja", "Preguiça"], "c": 1, "d": "dificil"}, {"n": "O que Fogg faz com o dinheiro que ganha na aposta?", "o": ["Guarda tudo", "Gasta quase tudo na própria viagem", "Doa para o banco", "Esconde"], "c": 1, "d": "dificil"}, {"n": "Quem escreveu 'A Volta ao Mundo em 80 Dias'?", "o": ["Júlio Verne", "Monteiro Lobato", "Machado de Assis", "Hans Christian Andersen"], "c": 0, "d": "facil"}, {"n": "De que nacionalidade era o autor do livro?", "o": ["Inglês", "Francês", "Português", "Alemão"], "c": 1, "d": "medio"}, {"n": "O livro é um exemplo de qual tipo de história?", "o": ["Terror", "Aventura e viagem", "Romance de época só", "Biografia"], "c": 1, "d": "facil"}, {"n": "O que move a viagem do começo ao fim?", "o": ["O medo", "Uma aposta e a precisão do tempo", "A fome", "A guerra"], "c": 1, "d": "medio"}, {"n": "Por que viajar 'para o leste' fez Fogg ganhar tempo?", "o": ["A Terra gira e cada fuso adianta o relógio", "Porque é mais perto", "Por causa do vento", "Por acaso"], "c": 0, "d": "dificil"}, {"n": "Se Fogg tivesse ido para o oeste, o que aconteceria com o dia?", "o": ["Ganharia um dia também", "Perderia um dia em vez de ganhar", "Nada mudaria", "Ganharia dois dias"], "c": 1, "d": "dificil"}, {"n": "O que Fix sente ao longo da viagem em relação a Fogg?", "o": ["Só ódio", "Acaba respeitando Fogg apesar de persegui-lo", "Indiferença", "Medo"], "c": 1, "d": "dificil"}, {"n": "Qual obstáculo natural aparece ao cruzar os EUA de trem?", "o": ["Uma ponte instável e perigosa", "Um vulcão", "Um deserto sem fim", "Uma enchente"], "c": 0, "d": "dificil"}, {"n": "Quem ataca o trem no oeste americano?", "o": ["Piratas", "Indígenas (Sioux)", "Soldados", "Ladrões de banco"], "c": 1, "d": "dificil"}, {"n": "Como Fogg atravessa parte dos EUA quando perde o trem?", "o": ["A pé", "Num trenó à vela (sobre a neve)", "De balão", "Nadando"], "c": 1, "d": "dificil"}, {"n": "O balão de ar é realmente usado no livro original?", "o": ["Sim, o tempo todo", "Não, é uma invenção dos filmes", "Só no começo", "Só no fim"], "c": 1, "d": "dificil"}, {"n": "Qual é a maior virtude que Fogg demonstra sob pressão?", "o": ["Calma e autocontrole", "Raiva", "Pânico", "Desistência"], "c": 0, "d": "medio"}, {"n": "O que o livro ensina sobre planejar bem o tempo?", "o": ["Que tempo não importa", "Que organização e disciplina vencem desafios", "Que sorte é tudo", "Que é melhor não planejar"], "c": 1, "d": "medio"}, {"n": "Por que Passepartout perde o patrão de vista no Japão?", "o": ["Dorme demais", "Fica separado depois de uma confusão", "Decide ficar", "Foi preso por Fogg"], "c": 1, "d": "dificil"}, {"n": "O que Aouda passa a sentir por Fogg durante a viagem?", "o": ["Medo", "Admiração e afeto", "Raiva", "Indiferença"], "c": 1, "d": "medio"}, {"n": "Qual era a profissão de Phileas Fogg?", "o": ["Não trabalhava, era um cavalheiro rico", "Médico", "Marinheiro", "Detetive"], "c": 0, "d": "medio"}, {"n": "O que Fogg leva sempre consigo para controlar a viagem?", "o": ["Um mapa enorme", "Um caderno onde anota tempos e gastos", "Um telescópio", "Uma bússola dourada"], "c": 1, "d": "dificil"}, {"n": "Por que Passepartout demora a confiar no detetive Fix?", "o": ["Fix age de forma suspeita", "Fix é grosseiro", "Fix não fala inglês", "Fix é amigo de Aouda"], "c": 0, "d": "dificil"}, {"n": "O que o título '80 dias' representa na história?", "o": ["O tempo de férias", "O prazo exato da aposta", "A idade de Fogg", "Os dias de chuva"], "c": 1, "d": "facil"}, {"n": "Que continente NÃO faz parte da rota de Fogg?", "o": ["Ásia", "Europa", "América", "Antártida"], "c": 3, "d": "dificil"}, {"n": "Como termina a história para Phileas Fogg?", "o": ["Triste e sozinho", "Vence a aposta e encontra o amor", "Vai preso", "Some no mar"], "c": 1, "d": "facil"}, {"n": "Qual era o ritmo da viagem segundo Fogg?", "o": ["Sem pressa", "Tudo cronometrado ao minuto", "Bem devagar", "Só de dia"], "c": 1, "d": "medio"}, {"n": "O que Fogg faz quando alguém precisa de ajuda no caminho?", "o": ["Ignora para não perder tempo", "Para e ajuda, mesmo arriscando a aposta", "Manda outra pessoa", "Foge"], "c": 1, "d": "dificil"}, {"n": "Qual oceano eles cruzam indo do Japão aos EUA?", "o": ["Atlântico", "Pacífico", "Índico", "Ártico"], "c": 1, "d": "medio"}, {"n": "Qual oceano eles cruzam indo dos EUA à Europa?", "o": ["Pacífico", "Atlântico", "Índico", "Ártico"], "c": 1, "d": "medio"}, {"n": "Qual mar/canal liga a Europa à Ásia na rota (no Egito)?", "o": ["Canal de Suez", "Canal do Panamá", "Estreito de Gibraltar", "Mar Morto"], "c": 0, "d": "dificil"}, {"n": "Por que a abertura do Canal de Suez foi importante para a viagem?", "o": ["Encurtou o caminho entre Europa e Ásia", "Não teve importância", "Atrasou a viagem", "Era só decoração"], "c": 0, "d": "dificil"}, {"n": "O que Fogg demonstra ao não comemorar suas vitórias?", "o": ["Tristeza", "Frieza e autocontrole", "Cansaço", "Medo"], "c": 1, "d": "medio"}, {"n": "Qual seria o título em inglês do livro?", "o": ["Around the World in 80 Days", "The Long Trip", "Mr. Fogg's Bet", "London to London"], "c": 0, "d": "medio"}, {"n": "Por que os apostadores do clube duvidavam de Fogg?", "o": ["Achavam impossível dar a volta tão rápido", "Não gostavam dele", "Ele era pobre", "Ele era estrangeiro"], "c": 0, "d": "medio"}, {"n": "Qual a reação de Fogg diante de imprevistos?", "o": ["Desespero", "Resolve com calma e dinheiro", "Desiste", "Chora"], "c": 1, "d": "medio"}, {"n": "O que aconteceu com o criado anterior de Fogg, antes de Passepartout?", "o": ["Foi demitido por trazer água na temperatura errada", "Morreu", "Virou rico", "Fugiu"], "c": 0, "d": "dificil"}, {"n": "Por que essa demissão mostra como Fogg era?", "o": ["Generoso", "Extremamente exigente com precisão", "Distraído", "Bonzinho"], "c": 1, "d": "dificil"}, {"n": "O que Passepartout achou da casa de Fogg no começo?", "o": ["Caótica", "Organizada e cronometrada como um relógio", "Suja", "Vazia"], "c": 1, "d": "dificil"}, {"n": "O que representa o relógio de Passepartout na história?", "o": ["Apenas decoração", "O apego dele ao horário de casa, que dá problema", "Um presente de Fogg", "Nada"], "c": 1, "d": "dificil"}, {"n": "Qual problema o relógio de Passepartout causa?", "o": ["Ele se confunde com os fusos horários", "Quebra", "É roubado", "Atrasa o trem"], "c": 0, "d": "dificil"}, {"n": "O detetive Fix espera por qual documento para prender Fogg?", "o": ["Um passaporte", "Um mandado de prisão", "Uma carta", "Um bilhete"], "c": 1, "d": "dificil"}, {"n": "Por que o mandado demora a chegar?", "o": ["A burocracia e a distância atrasam tudo", "Foi perdido", "Fix esqueceu", "Ninguém assinou"], "c": 0, "d": "dificil"}, {"n": "Quando o mandado finalmente chega, Fogg está...", "o": ["Inocente, pois o ladrão já foi pego", "Culpado", "Fugindo", "Escondido"], "c": 0, "d": "dificil"}, {"n": "Quanto tempo Fogg fica preso por engano perto do fim?", "o": ["Algumas horas", "Vários dias", "Um mês", "Não fica preso"], "c": 0, "d": "dificil"}, {"n": "Como Fogg reage ao ser preso injustamente?", "o": ["Com fúria", "Com calma, sem perder a dignidade", "Chorando", "Fugindo"], "c": 1, "d": "medio"}, {"n": "O que Passepartout faz de bom no templo japonês/indiano?", "o": ["Reza", "Acaba ajudando a salvar Aouda", "Dorme", "Some"], "c": 1, "d": "dificil"}, {"n": "Qual é a lição sobre julgar pessoas pela aparência?", "o": ["Fogg parece frio, mas é nobre por dentro", "Aparência é tudo", "Não há lição", "Todos são iguais"], "c": 0, "d": "dificil"}, {"n": "A viagem de Fogg vai de qual direção para qual?", "o": ["Oeste para leste", "Leste para oeste", "Norte para sul", "Sul para norte"], "c": 0, "d": "dificil"}, {"n": "Por que a direção da viagem foi decisiva no final?", "o": ["Por causa do ganho de tempo nos fusos", "Não foi decisiva", "Por causa do clima", "Por causa do mar"], "c": 0, "d": "dificil"}, {"n": "O que significa a palavra 'Passepartout' tem a ver com?", "o": ["Algo como 'passa por todo lugar'", "Um tipo de comida", "Um país", "Um navio"], "c": 0, "d": "dificil"}, {"n": "Qual é o clima geral do final da história?", "o": ["Triste", "Feliz e surpreendente", "Assustador", "Sem graça"], "c": 1, "d": "facil"}, {"n": "O que Fogg arrisca ao parar para salvar Aouda?", "o": ["Nada", "Perder tempo e a aposta", "O dinheiro", "O navio"], "c": 1, "d": "medio"}, {"n": "O verdadeiro tesouro que Fogg encontra na viagem é...", "o": ["Ouro", "O amor de Aouda e amizade", "Diamantes", "Um mapa"], "c": 1, "d": "medio"}, {"n": "Quantos personagens principais acompanham Fogg até o fim?", "o": ["Passepartout e Aouda", "Só Passepartout", "Ninguém", "Fix e Aouda"], "c": 0, "d": "medio"}, {"n": "O que Fogg faz todos os dias com extrema regularidade?", "o": ["Joga cartas no clube no mesmo horário", "Corre", "Viaja", "Dorme até tarde"], "c": 0, "d": "dificil"}, {"n": "Que jogo Fogg costuma jogar no Reform Club?", "o": ["Xadrez", "Whist (jogo de cartas)", "Damas", "Dominó"], "c": 1, "d": "dificil"}, {"n": "A história mostra o mundo na época de qual grande mudança?", "o": ["Era das máquinas a vapor e ferrovias", "Idade Média", "Era espacial", "Pré-história"], "c": 0, "d": "dificil"}, {"n": "Por que era possível dar a volta em 80 dias naquela época?", "o": ["Por causa dos navios a vapor e novas ferrovias", "Por causa dos aviões", "Por causa de carros", "Não era possível"], "c": 0, "d": "dificil"}, {"n": "O que Fogg nunca demonstra, mesmo em perigo?", "o": ["Coragem", "Pânico ou desespero", "Inteligência", "Educação"], "c": 1, "d": "medio"}, {"n": "Como Passepartout se sente quando pensa que custou a aposta ao patrão?", "o": ["Aliviado", "Culpado e arrasado", "Feliz", "Indiferente"], "c": 1, "d": "dificil"}, {"n": "Qual detalhe pequeno salva a aposta no último momento?", "o": ["O dia 'extra' ganho nos fusos horários", "Um atalho", "Um navio rápido", "A ajuda de Fix"], "c": 0, "d": "dificil"}, {"n": "O que o livro sugere sobre coragem e razão juntas?", "o": ["Razão é inútil", "Planejar com calma e agir com coragem leva ao sucesso", "Só a sorte importa", "Coragem basta"], "c": 1, "d": "dificil"}, {"n": "Fogg paga as despesas da viagem com...", "o": ["Empréstimos", "Seu próprio dinheiro, sempre à vista", "Cartão", "Não paga"], "c": 1, "d": "medio"}, {"n": "Como as pessoas reagem quando Fogg volta a Londres?", "o": ["Surpresas e admiradas", "Com raiva", "Indiferentes", "Com medo"], "c": 0, "d": "facil"}, {"n": "O que Passepartout descobre ao visitar uma igreja em Londres no fim?", "o": ["Que era um dia antes do que pensavam", "Que perderam tudo", "Que Fogg sumiu", "Que Fix mentiu"], "c": 0, "d": "dificil"}, {"n": "A história é narrada destacando muito qual elemento?", "o": ["O dinheiro", "O tempo (horários, prazos, minutos)", "A comida", "O clima"], "c": 1, "d": "medio"}, {"n": "O que faz de Fogg um herói diferente?", "o": ["Vence pela força", "Vence pela inteligência, disciplina e bondade", "Vence por sorte", "Vence trapaceando"], "c": 1, "d": "dificil"}, {"n": "Se você viajar o mundo todo para o leste, no fim você terá...", "o": ["Perdido um dia", "Ganho um dia inteiro", "Ficado igual", "Perdido uma semana"], "c": 1, "d": "dificil"}, {"n": "Qual é a mensagem final que a história deixa?", "o": ["Nunca confie em ninguém", "Determinação, lealdade e gentileza valem a pena", "Dinheiro é tudo", "Viajar é perigoso"], "c": 1, "d": "medio"}];
+const PER_PARTIDA = 15;
+const TEMPO = 20; // segundos por pergunta
+
+let chosenLevel='aleatorio', deck=[], idx=0, score=0, correctCount=0,
+    streak=0, maxStreak=0, totalTime=0, timer=null, timeLeft=TEMPO, answered=false;
+
+const $=id=>document.getElementById(id);
+const show=id=>{['home','quiz','result'].forEach(s=>$(s).classList.add('hide'));$(id).classList.remove('hide')};
+
+// level selector
+$('levels').addEventListener('click',e=>{
+  const b=e.target.closest('.lvl'); if(!b)return;
+  document.querySelectorAll('.lvl').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); chosenLevel=b.dataset.l;
+});
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function buildDeck(){
+  let pool;
+  if(chosenLevel==='aleatorio'){
+    // alterna fácil/médio/difícil de forma intercalada
+    const f=shuffle(BANCO.filter(q=>q.d==='facil'));
+    const m=shuffle(BANCO.filter(q=>q.d==='medio'));
+    const d=shuffle(BANCO.filter(q=>q.d==='dificil'));
+    const order=['facil','medio','dificil','medio','dificil'];
+    const buckets={facil:f,medio:m,dificil:d};
+    const out=[];
+    let i=0;
+    while(out.length<PER_PARTIDA){
+      const lvl=order[i%order.length];
+      if(buckets[lvl].length) out.push(buckets[lvl].pop());
+      else { // se acabou um nível, pega de qualquer um
+        const rest=[...f,...m,...d].filter(q=>!out.includes(q));
+        if(!rest.length)break; out.push(rest[0]);
+      }
+      i++;
+    }
+    pool=out;
+  } else {
+    pool=shuffle(BANCO.filter(q=>q.d===chosenLevel)).slice(0,PER_PARTIDA);
+    // completa se faltar
+    if(pool.length<PER_PARTIDA){
+      const extra=shuffle(BANCO.filter(q=>q.d!==chosenLevel)).slice(0,PER_PARTIDA-pool.length);
+      pool=pool.concat(extra);
+    }
+  }
+  return pool.slice(0,PER_PARTIDA);
+}
+
+function startGame(){
+  deck=buildDeck(); idx=0; score=0; correctCount=0; streak=0; maxStreak=0; totalTime=0;
+  show('quiz'); render();
+}
+
+const LABELS={facil:'fácil',medio:'médio',dificil:'difícil'};
+function render(){
+  answered=false;
+  const q=deck[idx];
+  $('qnum').textContent=idx+1;
+  $('livescore').textContent=score;
+  $('prog').style.width=((idx)/PER_PARTIDA*100)+'%';
+  const chip=$('dchip'); chip.textContent=LABELS[q.d]; chip.className='dchip '+q.d;
+  $('qtext').textContent=q.n;
+  $('feedback').textContent=''; $('feedback').className='feedback';
+  const keys=['A','B','C','D'];
+  $('opts').innerHTML='';
+  q.o.forEach((opt,i)=>{
+    const b=document.createElement('button');
+    b.className='opt';
+    b.innerHTML='<span class="key">'+keys[i]+'</span><span>'+opt+'</span>';
+    b.onclick=()=>choose(i,b);
+    $('opts').appendChild(b);
+  });
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(timer); timeLeft=TEMPO;
+  const bar=$('timerbar'); bar.style.width='100%'; bar.classList.remove('warn');
+  timer=setInterval(()=>{
+    timeLeft-=0.1; totalTime+=0.1;
+    const pct=Math.max(0,timeLeft/TEMPO*100);
+    bar.style.width=pct+'%';
+    if(timeLeft<=6) bar.classList.add('warn');
+    if(timeLeft<=0){ clearInterval(timer); choose(-1,null); }
+  },100);
+}
+
+function choose(i,btn){
+  if(answered)return; answered=true; clearInterval(timer);
+  const q=deck[idx];
+  const opts=[...document.querySelectorAll('.opt')];
+  opts.forEach(o=>o.disabled=true);
+  opts[q.c].classList.add('correct');
+  const fb=$('feedback');
+  if(i===q.c){
+    // pontos: base + bônus por dificuldade + bônus de tempo
+    const diffBonus={facil:5,medio:8,dificil:12}[q.d];
+    const timeBonus=Math.round(timeLeft);
+    score+=diffBonus+timeBonus; correctCount++; streak++; maxStreak=Math.max(maxStreak,streak);
+    fb.textContent= streak>=3 ? '🔥 Mandou bem! '+streak+' seguidas!' : '✓ Acertou!';
+    fb.className='feedback ok';
+  } else {
+    streak=0;
+    if(btn) btn.classList.add('wrong');
+    fb.textContent = i===-1 ? '⏰ Tempo esgotado!' : '✗ Quase! A certa está em verde.';
+    fb.className='feedback no';
+  }
+  $('livescore').textContent=score;
+  $('prog').style.width=((idx+1)/PER_PARTIDA*100)+'%';
+  setTimeout(()=>{
+    idx++;
+    if(idx<deck.length) render(); else finish();
+  },1400);
+}
+
+function finish(){
+  const grade=(correctCount/PER_PARTIDA*10);
+  const g=Math.round(grade*10)/10;
+  $('gradeNum').textContent=Number.isInteger(g)?g:g.toFixed(1);
+  $('stCorrect').textContent=correctCount+'/'+PER_PARTIDA;
+  $('stStreak').textContent=maxStreak;
+  $('stTime').textContent=Math.round(totalTime)+'s';
+  let medal,msg;
+  if(g>=9){medal='🥇';msg='Capitão da viagem! Conhece o livro de cabo a rabo.'}
+  else if(g>=7){medal='🥈';msg='Excelente navegador! Quase tudo no lugar.'}
+  else if(g>=5){medal='🥉';msg='Bom marinheiro! Vale reler alguns trechos.'}
+  else {medal='🧭';msg='A viagem mal começou — bora reler e tentar de novo!'}
+  $('medal').textContent=medal; $('rmsg').textContent=msg;
+  $('rankBox').classList.add('hide');
+  $('saveScore').classList.remove('hide');
+  $('playerName').classList.remove('hide');
+  $('playerName').value=lastName();
+  show('result');
+}
+
+/* ---- Placar local (sem servidor) ---- */
+const RK='quiz_netao_rank', NK='quiz_netao_name';
+function getRank(){try{return JSON.parse(localStorage.getItem(RK))||[]}catch{return[]}}
+function lastName(){try{return localStorage.getItem(NK)||''}catch{return''}}
+function drawRank(myEntry){
+  const list=getRank().sort((a,b)=>b.s-a.s).slice(0,8);
+  const box=$('ranklist'); box.innerHTML='';
+  list.forEach((r,i)=>{
+    const div=document.createElement('div');
+    const isMe=myEntry && r.t===myEntry.t && r.n===myEntry.n && r.s===myEntry.s;
+    div.className='rankrow'+(isMe?' me':'');
+    div.innerHTML='<span><span class="pos">'+(i+1)+'º</span>'+r.n+'</span><span>nota '+r.g+' · '+r.s+'pts</span>';
+    box.appendChild(div);
+  });
+  if(!list.length) box.innerHTML='<div class="rankrow">Ainda sem placar — seja o primeiro!</div>';
+  $('rankBox').classList.remove('hide');
+}
+
+$('saveScore').onclick=()=>{
+  const name=($('playerName').value||'Anônimo').trim().slice(0,14);
+  try{localStorage.setItem(NK,name)}catch{}
+  const g=$('gradeNum').textContent;
+  const entry={n:name,s:score,g:g,t:Date.now()};
+  const rank=getRank(); rank.push(entry);
+  try{localStorage.setItem(RK,JSON.stringify(rank))}catch{}
+  $('saveScore').classList.add('hide'); $('playerName').classList.add('hide');
+  drawRank(entry);
+};
+
+$('seeRank').onclick=()=>{ show('result');
+  $('medal').textContent='🏆'; $('gradeNum').textContent='—';
+  document.querySelector('.grade small').style.display='none';
+  $('rmsg').textContent='Placar dos campeões';
+  $('stCorrect').textContent='—';$('stStreak').textContent='—';$('stTime').textContent='—';
+  $('saveScore').classList.add('hide'); $('playerName').classList.add('hide');
+  drawRank(null);
+};
+
+$('start').onclick=startGame;
+$('again').onclick=()=>{ document.querySelector('.grade small').style.display='';
+  show('home'); };
+</script>
+</body>
+</html>
