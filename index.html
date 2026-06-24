@@ -156,6 +156,12 @@
   @keyframes fall{to{transform:translateY(108vh) rotate(560deg);opacity:.9}}
   .dchip.bonus{background:#f6e2a0;color:#8a5a00}
   #quizTop.bonus .pill{color:#8a5a00}
+  .rankrow.clickable{cursor:pointer}
+  .rankrow .tries{color:var(--brass-dk);font-weight:bold;font-size:10.5px;margin-left:5px}
+  .rankdetail{background:#fff;border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;margin:-6px 0 8px;padding:9px 13px;font-size:12px;color:var(--sea-dk)}
+  .rankdetail .rd-row{margin:3px 0}
+  .rankdetail b{color:var(--ink)}
+  .rankdetail .rd-scores{margin-top:5px;opacity:.85;line-height:1.5}
 </style>
 </head>
 <body>
@@ -551,17 +557,36 @@ function showBadgeToast(t){
 /* ---------- PLACAR (online via planilha + fallback local) ---------- */
 function localRank(){try{return JSON.parse(localStorage.getItem(LS.rank))||[]}catch{return[]}}
 function pushLocal(e){const r=localRank();r.push(e);lsSet(LS.rank,JSON.stringify(r));return r}
-function renderRank(list,myKey,status){
-  list.sort((a,b)=>b.s-a.s);
+function renderRank(list,myName,status){
   const box=$('ranklist');box.innerHTML='';
-  list.slice(0,10).forEach((r,i)=>{
-    const div=document.createElement('div');
-    const isMe=myKey&&(r.k===myKey);
-    div.className='rankrow'+(isMe?' me':'');
-    div.innerHTML='<span><span class="pos">'+(i+1)+'º</span><span class="av-s">'+(r.a||'🧭')+'</span>'+r.n+'</span><span>'+r.s+' pts</span>';
-    box.appendChild(div);
+  // agrupa por nome (normalizado: sem espacos extras, sem diferenca de maiusculas)
+  const map=new Map();
+  list.forEach(r=>{
+    const key=((r.n||'?').trim().toLowerCase())||'?';
+    const sc=Number(r.s)||0;
+    let g=map.get(key);
+    if(!g){g={nome:(r.n||'?'),av:r.a||'🧭',best:sc,grade:r.g,tentativas:0,soma:0,scores:[]};map.set(key,g);}
+    g.tentativas++; g.soma+=sc; g.scores.push(sc);
+    if(sc>g.best){g.best=sc;g.grade=r.g;g.av=r.a||g.av;g.nome=r.n||g.nome;}
   });
-  if(!list.length)box.innerHTML='<div class="rankrow">Ainda sem placar - seja o primeiro!</div>';
+  const groups=[...map.values()].sort((a,b)=>b.best-a.best);
+  if(!groups.length){box.innerHTML='<div class="rankrow">Ainda sem placar - seja o primeiro!</div>';$('rstatus').textContent=status||'';$('rankBox').classList.remove('hide');return;}
+  const mk=myName?myName.trim().toLowerCase():null;
+  groups.slice(0,10).forEach((g,i)=>{
+    const row=document.createElement('div');
+    const isMe=mk&&(g.nome.trim().toLowerCase()===mk);
+    row.className='rankrow clickable'+(isMe?' me':'');
+    row.innerHTML='<span><span class="pos">'+(i+1)+'º</span><span class="av-s">'+g.av+'</span>'+g.nome+(g.tentativas>1?'<span class="tries">'+g.tentativas+'x</span>':'')+'</span><span>'+g.best+' pts ▾</span>';
+    const det=document.createElement('div'); det.className='rankdetail hide';
+    const sc=g.scores.slice().sort((a,b)=>b-a);
+    const media=Math.round(g.soma/g.tentativas);
+    det.innerHTML='<div class="rd-row"><b>'+g.tentativas+'</b> tentativa'+(g.tentativas>1?'s':'')+'</div>'+
+      '<div class="rd-row">Melhor: <b>'+g.best+' pts</b>'+(g.grade!=null&&g.grade!==''?' · nota '+g.grade:'')+'</div>'+
+      '<div class="rd-row">Média: <b>'+media+' pts</b></div>'+
+      '<div class="rd-row rd-scores">Pontuações: '+sc.slice(0,8).join(' · ')+(sc.length>8?' …':'')+'</div>';
+    row.onclick=()=>{det.classList.toggle('hide')};
+    box.appendChild(row); box.appendChild(det);
+  });
   $('rstatus').textContent=status||'';
   $('rankBox').classList.remove('hide');
 }
@@ -577,11 +602,11 @@ async function autoSave(){
       const data=await res.json();
       const list=(data.rows||data).map(r=>({k:r.k,n:r.n,a:r.a,s:Number(r.s),g:r.g}));
       if(!list.find(r=>r.k===myKey))list.push(entry);
-      renderRank(list,myKey,'✅ Salvo! Placar online da turma');
+      renderRank(list,playerName,'✅ Salvo! Placar online da turma');
       return;
-    }catch(e){renderRank(localRank(),myKey,'⚠️ Sem conexao - salvo neste aparelho');return}
+    }catch(e){renderRank(localRank(),playerName,'⚠️ Sem conexao - salvo neste aparelho');return}
   }
-  renderRank(localRank(),myKey,'📱 Salvo neste aparelho');
+  renderRank(localRank(),playerName,'📱 Salvo neste aparelho');
 }
 $('seeRank').onclick=async()=>{
   show('result');
