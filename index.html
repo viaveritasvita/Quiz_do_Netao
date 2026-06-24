@@ -162,6 +162,11 @@
   .rankdetail .rd-row{margin:3px 0}
   .rankdetail b{color:var(--ink)}
   .rankdetail .rd-scores{margin-top:5px;opacity:.85;line-height:1.5}
+  .rankmode{display:flex;gap:6px;margin:2px 0 9px}
+  .rankmode .rm{flex:1;padding:7px;border:2px solid var(--line);background:var(--paper);border-radius:9px;font-family:inherit;font-size:12px;font-weight:bold;color:var(--sea-dk);cursor:pointer}
+  .rankmode .rm.on{background:#fff;border-color:var(--coral);color:var(--coral);box-shadow:0 2px 0 var(--coral)}
+  .rankrow .medal-pos{margin-right:6px;font-size:15px}
+  .rankrow .metric .alt{color:var(--sea-dk);opacity:.7;font-weight:normal;font-size:10.5px;margin-left:2px}
 </style>
 </head>
 <body>
@@ -234,6 +239,7 @@
     <div id="rankBox" class="hide">
       <div class="ranktitle">🏆 Placar dos exploradores</div>
       <div class="rstatus" id="rstatus"></div>
+      <div class="rankmode" id="rankmode"><button class="rm on" data-m="score">🏆 Pontuação</button><button class="rm" data-m="xp">⭐ XP</button></div>
       <div id="ranklist"></div>
     </div>
 
@@ -557,38 +563,49 @@ function showBadgeToast(t){
 /* ---------- PLACAR (online via planilha + fallback local) ---------- */
 function localRank(){try{return JSON.parse(localStorage.getItem(LS.rank))||[]}catch{return[]}}
 function pushLocal(e){const r=localRank();r.push(e);lsSet(LS.rank,JSON.stringify(r));return r}
+let rankMode='score', lastGroups=[], lastMyName=null;
 function renderRank(list,myName,status){
-  const box=$('ranklist');box.innerHTML='';
-  // agrupa por nome (normalizado: sem espacos extras, sem diferenca de maiusculas)
   const map=new Map();
   list.forEach(r=>{
     const key=((r.n||'?').trim().toLowerCase())||'?';
     const sc=Number(r.s)||0;
     let g=map.get(key);
-    if(!g){g={nome:(r.n||'?'),av:r.a||'🧭',best:sc,grade:r.g,tentativas:0,soma:0,scores:[]};map.set(key,g);}
-    g.tentativas++; g.soma+=sc; g.scores.push(sc);
+    if(!g){g={nome:(r.n||'?'),av:r.a||'🧭',best:sc,grade:r.g,tentativas:0,xp:0,scores:[]};map.set(key,g);}
+    g.tentativas++; g.xp+=sc; g.scores.push(sc);
     if(sc>g.best){g.best=sc;g.grade=r.g;g.av=r.a||g.av;g.nome=r.n||g.nome;}
   });
-  const groups=[...map.values()].sort((a,b)=>b.best-a.best);
-  if(!groups.length){box.innerHTML='<div class="rankrow">Ainda sem placar - seja o primeiro!</div>';$('rstatus').textContent=status||'';$('rankBox').classList.remove('hide');return;}
-  const mk=myName?myName.trim().toLowerCase():null;
+  lastGroups=[...map.values()]; lastMyName=myName;
+  $('rstatus').textContent=status||'';
+  $('rankBox').classList.remove('hide');
+  drawRank();
+}
+function drawRank(){
+  const box=$('ranklist'); box.innerHTML='';
+  if(!lastGroups.length){box.innerHTML='<div class="rankrow">Ainda sem placar - seja o primeiro!</div>';return;}
+  const groups=lastGroups.slice().sort((a,b)=> rankMode==='xp' ? b.xp-a.xp : b.best-a.best);
+  const mk=lastMyName?lastMyName.trim().toLowerCase():null;
+  const medals=['🥇','🥈','🥉'];
   groups.slice(0,10).forEach((g,i)=>{
     const row=document.createElement('div');
     const isMe=mk&&(g.nome.trim().toLowerCase()===mk);
     row.className='rankrow clickable'+(isMe?' me':'');
-    row.innerHTML='<span><span class="pos">'+(i+1)+'º</span><span class="av-s">'+g.av+'</span>'+g.nome+(g.tentativas>1?'<span class="tries">'+g.tentativas+'x</span>':'')+'</span><span>'+g.best+' pts ▾</span>';
+    const pos=i<3?('<span class="medal-pos">'+medals[i]+'</span>'):('<span class="pos">'+(i+1)+'º</span>');
+    const tries=g.tentativas>1?'<span class="tries">'+g.tentativas+'x</span>':'';
+    const metric = rankMode==='xp'
+      ? '<b>'+g.xp+' XP</b> <small class="alt">'+g.best+' pts</small>'
+      : '<b>'+g.best+' pts</b> <small class="alt">'+g.xp+' XP</small>';
+    row.innerHTML='<span>'+pos+'<span class="av-s">'+g.av+'</span>'+g.nome+tries+'</span><span class="metric">'+metric+' ▾</span>';
     const det=document.createElement('div'); det.className='rankdetail hide';
     const sc=g.scores.slice().sort((a,b)=>b-a);
-    const media=Math.round(g.soma/g.tentativas);
+    const media=Math.round(g.xp/g.tentativas);
     det.innerHTML='<div class="rd-row"><b>'+g.tentativas+'</b> tentativa'+(g.tentativas>1?'s':'')+'</div>'+
       '<div class="rd-row">Melhor: <b>'+g.best+' pts</b>'+(g.grade!=null&&g.grade!==''?' · nota '+g.grade:'')+'</div>'+
+      '<div class="rd-row">XP acumulada: <b>'+g.xp+'</b></div>'+
       '<div class="rd-row">Média: <b>'+media+' pts</b></div>'+
       '<div class="rd-row rd-scores">Pontuações: '+sc.slice(0,8).join(' · ')+(sc.length>8?' …':'')+'</div>';
     row.onclick=()=>{det.classList.toggle('hide')};
     box.appendChild(row); box.appendChild(det);
   });
-  $('rstatus').textContent=status||'';
-  $('rankBox').classList.remove('hide');
 }
 async function autoSave(){
   const myKey='k'+Date.now()+Math.random().toString(36).slice(2,6);
@@ -645,6 +662,7 @@ $('shareWa').onclick=()=>{
   const txt='🌍 Quiz do Netao - A Volta ao Mundo em 80 Dias!\n'+chosenAv+' '+playerName+' fez '+score+' pontos ('+correctCount+'/'+PER_PARTIDA+' acertos)!\nSera que voce me supera? Joga aqui: '+window.location.href;
   window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
 };
+document.querySelectorAll('#rankmode .rm').forEach(b=>b.onclick=()=>{rankMode=b.dataset.m;document.querySelectorAll('#rankmode .rm').forEach(x=>x.classList.toggle('on',x===b));drawRank()});
 $('start').onclick=startGame;
 $('again').onclick=()=>{initHome();show('home')};
 initHome();
