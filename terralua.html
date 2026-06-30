@@ -267,6 +267,7 @@ const QUIZ_CONFIG = {
   perPartida:     15,
   tempo:          20,
   sheetUrl:       "",
+  ns:             "terralua",
   eyebrow:        "Diário de Bordo Espacial",
   botao:          "Decolar! 🚀",
   mapIcon:        "🚀",
@@ -311,9 +312,10 @@ let curCorrect=0, curOpts=[], bonusPts=0, bonusKind='', shown=[];
 
 const $=id=>document.getElementById(id);
 const show=id=>{['home','quiz','result'].forEach(s=>$(s).classList.add('hide'));$(id).classList.remove('hide')};
+const _NS=QUIZ_CONFIG.ns||'quiz_netao';
 const LS={
-  name:'quiz_netao_name', av:'quiz_netao_av', rank:'quiz_netao_rank', snd:'quiz_netao_snd',
-  best:'quiz_netao_best', stats:'quiz_netao_stats', recent:'quiz_netao_recent'
+  name:_NS+'_name', av:_NS+'_av', rank:_NS+'_rank', snd:_NS+'_snd',
+  best:_NS+'_best', stats:_NS+'_stats', recent:_NS+'_recent'
 };
 function lsGet(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch{return d}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
