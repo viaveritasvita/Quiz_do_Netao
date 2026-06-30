@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Quiz do Netão - A Volta ao Mundo em 80 Dias</title>
+<style>
+  :root{
+    --ink:#1a2238; --paper:#f3ead6; --paper2:#ece0c4;
+    --sea:#2c6e8f; --sea-dk:#1d4f68; --brass:#c9962a; --brass-dk:#a87a18;
+    --coral:#c44a3d; --green:#3f7d54; --line:#cbb98f;
+    --shadow:rgba(26,34,56,.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif;
+    background:var(--ink);color:var(--ink);
+    display:flex;justify-content:center;align-items:center;
+    padding:14px;min-height:100dvh;
+    background-image:radial-gradient(circle at 20% 10%, #243059 0, var(--ink) 55%);
+  }
+  .app{
+    width:100%;max-width:440px;background:var(--paper);border-radius:22px;
+    box-shadow:0 18px 50px var(--shadow), inset 0 0 0 2px var(--paper2);
+    overflow:hidden;position:relative;
+  }
+  .app::before{
+    content:"";position:absolute;right:-40px;top:-40px;width:200px;height:200px;
+    border:3px solid var(--line);border-radius:50%;opacity:.25;
+    background:conic-gradient(from 0deg, transparent 0 44deg, var(--line) 45deg 46deg, transparent 47deg 90deg);
+    pointer-events:none;
+  }
+  .screen{padding:26px 22px 30px;position:relative;z-index:1}
+  .hide{display:none!important}
+
+  .eyebrow{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--sea-dk);font-weight:bold;margin-bottom:10px}
+  h1{font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.02;letter-spacing:-.5px;margin-bottom:6px}
+  h1 .big{display:block;font-size:52px;color:var(--coral);text-shadow:1px 1px 0 var(--brass)}
+  .subtitle{font-size:14px;color:var(--sea-dk);margin:10px 0 20px;font-style:italic}
+  .route{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--sea-dk);margin-bottom:20px;padding:10px 12px;background:var(--paper2);border-radius:12px;border:1px dashed var(--line)}
+  .route b{color:var(--coral)}
+  .label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sea-dk);font-weight:bold;margin-bottom:9px;display:block}
+
+  /* avatar picker */
+  .avatars{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .av{font-size:24px;width:46px;height:46px;border-radius:12px;border:2px solid var(--line);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.12s}
+  .av.on{border-color:var(--coral);box-shadow:0 3px 0 var(--coral);transform:translateY(-2px)}
+  .name-in{width:100%;padding:13px;border:2px solid var(--line);border-radius:12px;font-size:15px;font-family:inherit;margin-bottom:18px;text-align:center;background:#fff}
+
+  .levels{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px}
+  .lvl{padding:13px 10px;border-radius:13px;border:2px solid var(--line);background:var(--paper);cursor:pointer;text-align:left;transition:.15s;font-size:13px;font-weight:bold;color:var(--ink)}
+  .lvl small{display:block;font-weight:normal;font-size:10.5px;color:var(--sea-dk);margin-top:3px}
+  .lvl.on{background:#fff}
+  .lvl[data-l="facil"].on{border-color:var(--green);box-shadow:0 4px 0 var(--green)}
+  .lvl[data-l="medio"].on{border-color:var(--brass-dk);box-shadow:0 4px 0 var(--brass-dk)}
+  .lvl[data-l="dificil"].on{border-color:var(--coral);box-shadow:0 4px 0 var(--coral)}
+  .lvl[data-l="aleatorio"].on{border-color:var(--sea);box-shadow:0 4px 0 var(--sea)}
+  .lvl:active{transform:translateY(2px)}
+
+  .btn{width:100%;padding:16px;border:none;border-radius:14px;font-size:17px;font-weight:bold;cursor:pointer;letter-spacing:.02em;font-family:inherit;transition:.15s}
+  .btn-go{background:var(--coral);color:#fff;box-shadow:0 5px 0 #8f3025}
+  .btn-go:active{transform:translateY(3px);box-shadow:0 2px 0 #8f3025}
+  .btn-wa{background:#25d366;color:#fff;box-shadow:0 5px 0 #128c46;margin-top:10px}
+  .btn-wa:active{transform:translateY(3px);box-shadow:0 2px 0 #128c46}
+  .btn-ghost{background:transparent;color:var(--sea-dk);border:2px solid var(--line);box-shadow:none;margin-top:10px;font-size:14px;padding:12px}
+  .soundtoggle{position:absolute;top:18px;right:18px;z-index:3;background:var(--paper2);border:2px solid var(--line);border-radius:10px;width:40px;height:40px;font-size:18px;cursor:pointer}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .pill{font-size:12px;font-weight:bold;color:var(--sea-dk)}
+  .pill .score{color:var(--coral)}
+  .progress{height:8px;background:var(--paper2);border-radius:99px;overflow:hidden;margin:10px 0 4px}
+  .progress > i{display:block;height:100%;background:var(--sea);width:0;transition:width .3s}
+  .timer-wrap{height:6px;background:var(--paper2);border-radius:99px;overflow:hidden;margin-bottom:16px}
+  .timer-wrap > i{display:block;height:100%;background:var(--brass);width:100%}
+  .timer-wrap > i.warn{background:var(--coral)}
+  .dchip{display:inline-block;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:.1em;padding:3px 9px;border-radius:99px;margin-bottom:12px}
+  .dchip.facil{background:#dcefe0;color:var(--green)}
+  .dchip.medio{background:#fdeecb;color:var(--brass-dk)}
+  .dchip.dificil{background:#fbdcd8;color:var(--coral)}
+  .qtext{font-family:Georgia,serif;font-size:21px;line-height:1.25;margin-bottom:18px;min-height:80px}
+  .opts{display:flex;flex-direction:column;gap:11px}
+  .opt{text-align:left;padding:15px 16px;border-radius:13px;border:2px solid var(--line);background:#fff;cursor:pointer;font-size:15px;font-family:inherit;color:var(--ink);display:flex;align-items:center;gap:11px;transition:.12s}
+  .opt:active{transform:scale(.99)}
+  .opt .key{flex:0 0 26px;height:26px;border-radius:7px;background:var(--paper2);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;color:var(--sea-dk)}
+  .opt.correct{border-color:var(--green);background:#e7f8ea}
+  .opt.correct .key{background:var(--green);color:#fff}
+  .opt.wrong{border-color:var(--coral);background:#fbe6e3}
+  .opt.wrong .key{background:var(--coral);color:#fff}
+  .opt:disabled{cursor:default}
+  .feedback{margin-top:14px;font-size:14px;font-weight:bold;min-height:22px;text-align:center}
+  .feedback.ok{color:var(--green)} .feedback.no{color:var(--coral)}
+  @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+  .badge-toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:12px 18px;border-radius:14px;font-size:13px;font-weight:bold;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:pop .4s ease}
+  .badge-toast .bi{font-size:20px;margin-right:6px}
+
+  .result{text-align:center}
+  .medal{font-size:60px;line-height:1;margin:4px 0;animation:pop .5s ease}
+  .grade{font-family:Georgia,serif;font-size:62px;color:var(--coral);line-height:1}
+  .grade small{font-size:22px;color:var(--sea-dk)}
+  .rmsg{font-size:15px;margin:8px 0 18px;color:var(--sea-dk);font-style:italic}
+  .stats{display:flex;gap:9px;margin-bottom:16px}
+  .stat{flex:1;background:var(--paper2);border-radius:13px;padding:12px 6px}
+  .stat b{display:block;font-size:23px} .stat span{font-size:10px;color:var(--sea-dk);text-transform:uppercase;letter-spacing:.06em}
+  .badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;min-height:10px}
+  .bdg{font-size:11px;font-weight:bold;background:#fff;border:2px solid var(--brass);color:var(--brass-dk);padding:6px 11px;border-radius:99px;animation:pop .4s ease}
+  .ranktitle{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sea-dk);font-weight:bold;text-align:left;margin:14px 0 8px}
+  .rankrow{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-radius:10px;background:#fff;border:1px solid var(--line);margin-bottom:6px;font-size:13px}
+  .rankrow.me{border-color:var(--coral);background:#fff6f4;font-weight:bold}
+  .rankrow .pos{color:var(--brass-dk);font-weight:bold;margin-right:6px}
+  .rankrow .av-s{margin-right:6px}
+  .rstatus{font-size:11px;color:var(--sea-dk);text-align:center;margin:6px 0;opacity:.8}
+  /* review */
+  .rev{text-align:left;margin-top:6px}
+  .revq{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:9px;font-size:13px}
+  .revq .qq{font-weight:bold;margin-bottom:6px;font-family:Georgia,serif;font-size:14px}
+  .revq .ans{display:block;margin:2px 0}
+  .revq .right{color:var(--green);font-weight:bold}
+  .revq .your{color:var(--coral)}
+  .foot{text-align:center;font-size:10.5px;color:var(--sea-dk);opacity:.7;margin-top:16px}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+  /* multiplicador nos modos */
+  .lvl .mult{float:right;font-size:10px;font-weight:bold;background:var(--paper2);color:var(--sea-dk);border-radius:6px;padding:1px 6px;margin-left:4px}
+  .lvl[data-l="dificil"] .mult,.lvl[data-l="aleatorio"] .mult{background:var(--coral);color:#fff}
+  .lvl .rec{display:block;font-size:9px;font-weight:bold;color:var(--green);margin-top:3px;letter-spacing:.03em}
+  .scorehelp{font-size:11px;color:var(--sea-dk);background:var(--paper2);border:1px dashed var(--line);border-radius:10px;padding:9px 11px;margin-bottom:14px;line-height:1.55}
+  .scorehelp b{color:var(--coral)}
+  .homebest{text-align:center;font-size:12px;font-weight:bold;color:var(--brass-dk);margin-bottom:10px;min-height:14px}
+  /* combo */
+  .combo{font-size:12px;font-weight:bold;color:var(--coral);animation:pop .3s ease}
+  .feedback small{display:block;font-weight:normal;font-size:11px;color:var(--sea-dk);margin-top:3px}
+  .feedback b{font-size:17px}
+  /* mapa da viagem */
+  .routemap{position:relative;margin:2px 0 16px;height:40px}
+  .route-line{position:absolute;top:8px;left:3%;right:3%;height:4px;background:var(--paper2);border-radius:99px;overflow:hidden}
+  .route-line>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--sea),var(--brass));transition:width .5s}
+  .route-dots{position:absolute;top:3px;left:3%;right:3%;display:flex;justify-content:space-between}
+  .route-dot{display:flex;flex-direction:column;align-items:center}
+  .route-dot b{color:var(--line);font-size:11px;line-height:1}
+  .route-dot em{font-style:normal;font-size:7px;color:var(--sea-dk);margin-top:11px;white-space:nowrap;transform:rotate(-32deg);transform-origin:left top;opacity:.7}
+  .route-ship{position:absolute;top:-7px;left:0;transform:translateX(-50%);font-size:19px;transition:left .5s;z-index:2}
+  /* resultado novo */
+  .bigscore{font-family:Georgia,serif;font-size:58px;color:var(--coral);line-height:1;margin:2px 0}
+  .bigscore small{font-size:16px;color:var(--sea-dk);font-family:inherit;display:block;letter-spacing:.12em;text-transform:uppercase}
+  .recordline{font-size:13px;font-weight:bold;color:var(--brass-dk);margin:6px 0;min-height:16px}
+  .recordline.big{color:var(--coral);font-size:15px}
+  .resultmeta{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 2px;font-size:12px}
+  .resultmeta .stars{color:var(--brass);font-size:18px;letter-spacing:1px}
+  .resultmeta .patente{background:var(--sea);color:#fff;border-radius:99px;padding:3px 12px;font-weight:bold;font-size:11px}
+  .resultmeta .pct{color:var(--sea-dk);font-weight:bold}
+  /* avatar bloqueado */
+  .av.locked{opacity:.5;cursor:not-allowed;filter:grayscale(1)}
+  /* confete */
+  .confetti{position:fixed;top:-14px;width:9px;height:14px;border-radius:2px;z-index:60;animation:fall 2.6s linear forwards}
+  @keyframes fall{to{transform:translateY(108vh) rotate(560deg);opacity:.9}}
+  .dchip.bonus{background:#f6e2a0;color:#8a5a00}
+  #quizTop.bonus .pill{color:#8a5a00}
+  .rankrow.clickable{cursor:pointer}
+  .rankrow .tries{color:var(--brass-dk);font-weight:bold;font-size:10.5px;margin-left:5px}
+  .rankdetail{background:#fff;border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;margin:-6px 0 8px;padding:9px 13px;font-size:12px;color:var(--sea-dk)}
+  .rankdetail .rd-row{margin:3px 0}
+  .rankdetail b{color:var(--ink)}
+  .rankdetail .rd-scores{margin-top:5px;opacity:.85;line-height:1.5}
+  .rankmode{display:flex;gap:6px;margin:2px 0 9px}
+  .rankmode .rm{flex:1;padding:7px;border:2px solid var(--line);background:var(--paper);border-radius:9px;font-family:inherit;font-size:12px;font-weight:bold;color:var(--sea-dk);cursor:pointer}
+  .rankmode .rm.on{background:#fff;border-color:var(--coral);color:var(--coral);box-shadow:0 2px 0 var(--coral)}
+  .rankrow .medal-pos{margin-right:6px;font-size:15px}
+  .rankrow .metric .alt{color:var(--sea-dk);opacity:.7;font-weight:normal;font-size:10.5px;margin-left:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <button class="soundtoggle" id="sndBtn" title="Som">🔊</button>
+
+  <!-- HOME -->
+  <section id="home" class="screen">
+    <div class="eyebrow">Diário de Bordo · Júlio Verne</div>
+    <h1>Quiz do <span class="big">Netão</span></h1>
+    <div class="subtitle">A Volta ao Mundo em 80 Dias</div>
+    <div class="route"><b>Londres</b> → Suez → Bombaim → Calcutá → Hong Kong → Yokohama → S. Francisco → N. York → <b>Londres</b></div>
+
+    <span class="label">Seu nome de explorador</span>
+    <input class="name-in" id="homeName" maxlength="14" placeholder="Digite seu nome">
+    <span class="label">Escolha seu avatar</span>
+    <div class="avatars" id="avatars"></div>
+
+    <span class="label">Dificuldade</span>
+    <div class="levels" id="levels">
+      <button class="lvl on" data-l="aleatorio">🎲 Aleatório <span class="mult">×2 +🎁</span><small>Mistura tudo</small><span class="rec">⭐ Recomendado: treina tudo</span></button>
+      <button class="lvl" data-l="facil">🟢 Fácil <span class="mult">×1</span><small>Memória da história</small></button>
+      <button class="lvl" data-l="medio">🟡 Médio <span class="mult">×1.5</span><small>Entender o enredo</small></button>
+      <button class="lvl" data-l="dificil">🔴 Difícil <span class="mult">×2</span><small>Interpretar e pensar</small></button>
+    </div>
+    <div class="scorehelp">🏆 <b>Como pontua:</b> cada acerto vale os pontos da dificuldade (fácil 5 · médio 8 · difícil 12) + bônus de tempo, tudo multiplicado pelo <b>combo</b> de acertos seguidos e pelo <b>multiplicador do modo</b>. O <b>Aleatório</b> ainda ganha +25% de bônus variedade — é onde mais se pontua!</div>
+
+    <div class="homebest" id="homeBest"></div>
+    <button class="btn btn-go" id="start">Zarpar! ⚓ (15 perguntas)</button>
+    <button class="btn btn-ghost" id="seeRank">🏆 Ver placar</button>
+    <a class="btn btn-ghost" href="index.html" style="display:block;text-decoration:none">⬅ Outros quizzes</a>
+    <div class="foot">Feito com carinho · funciona offline</div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="screen hide">
+    <div class="topbar" id="quizTop">
+      <span class="pill" id="qlabel">Pergunta <b id="qnum">1</b>/15</span>
+      <span class="combo hide" id="combo"></span>
+      <span class="pill">Pontos: <span class="score" id="livescore">0</span></span>
+    </div>
+    <div class="progress"><i id="prog"></i></div>
+    <div class="routemap" id="routemap"></div>
+    <div class="timer-wrap"><i id="timerbar"></i></div>
+    <span class="dchip" id="dchip">médio</span>
+    <div class="qtext" id="qtext"></div>
+    <div class="opts" id="opts"></div>
+    <div class="feedback" id="feedback"></div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="screen hide result">
+    <div class="medal" id="medal">🏅</div>
+    <div class="bigscore"><span id="bigScore">0</span><small>pontos</small></div>
+    <div class="recordline" id="recordLine"></div>
+    <div class="resultmeta">
+      <span class="stars" id="stars"></span>
+      <span class="patente" id="patente"></span>
+      <span class="pct" id="pctAcerto"></span>
+    </div>
+    <div class="rmsg" id="rmsg"></div>
+    <div class="stats">
+      <div class="stat"><b id="stCorrect">0</b><span>Acertos</span></div>
+      <div class="stat"><b id="stStreak">0</b><span>Sequência</span></div>
+      <div class="stat"><b id="stTime">0s</b><span>Tempo</span></div>
+    </div>
+    <div class="badges" id="badges"></div>
+
+    <button class="btn btn-wa" id="shareWa">Desafiar no WhatsApp 💬</button>
+
+    <div id="rankBox" class="hide">
+      <div class="ranktitle">🏆 Placar dos exploradores</div>
+      <div class="rstatus" id="rstatus"></div>
+      <div class="rankmode" id="rankmode"><button class="rm on" data-m="score">🏆 Pontuação</button><button class="rm" data-m="xp">⭐ XP</button></div>
+      <div id="ranklist"></div>
+    </div>
+
+    <div id="revBox" class="hide">
+      <div class="ranktitle">📖 Revisão — o que errou</div>
+      <div class="rev" id="revlist"></div>
+    </div>
+    <button class="btn btn-ghost" id="revBtn">📖 Ver minhas respostas</button>
+    <button class="btn btn-ghost" id="again">Jogar de novo 🔄</button>
+    <div class="foot">Seu resultado já entrou no placar automaticamente! 🏆</div>
+  </section>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURACAO DO QUIZ  ->  EDITE SO ESTE BLOCO PARA CADA LIVRO
+   ============================================================ */
+const QUIZ_CONFIG = {
+  titulo:         "Da Terra à Lua",
+  tituloDestaque: "à Lua",
+  livro:          "Júlio Verne",
+  autor:          "Júlio Verne",
+  rota:           ["Baltimore","Tampa","Stone's Hill","Columbiad","Lançamento","Espaço","Lua"],
+  perPartida:     15,
+  tempo:          20,
+  sheetUrl:       "",
+  eyebrow:        "Diário de Bordo Espacial",
+  botao:          "Decolar! 🚀",
+  mapIcon:        "🚀",
+  avatars:        ["🚀","🛰️","🌙","🪐","👨‍🚀","🌍","☄️","🔭","🛸","⭐","🌑","👽"]
+}
+
+/* ============================================================
+   BANCO DE PERGUNTAS  ->  TROQUE TODA ESTA LISTA PELAS DO SEU LIVRO
+   Cada pergunta tem este formato:
+     {"n":"Enunciado da pergunta?","o":["A","B","C","D"],"c":0,"d":"facil"}
+   n = enunciado | o = 4 alternativas | c = indice da CORRETA (0,1,2 ou 3)
+   d = dificuldade: "facil" | "medio" | "dificil"
+   (As alternativas sao embaralhadas automaticamente no jogo.)
+   ============================================================ */
+const BANCO = [{"n": "Quem escreveu 'Da Terra à Lua'?", "o": ["Júlio Verne", "Monteiro Lobato", "H. G. Wells", "Machado de Assis"], "c": 0, "d": "facil"}, {"n": "Qual é a nacionalidade do autor Júlio Verne?", "o": ["Francês", "Inglês", "Americano", "Português"], "c": 0, "d": "facil"}, {"n": "Onde se reúne o Clube do Canhão, que dá início à história?", "o": ["Em Baltimore, nos EUA", "Em Paris", "Em Londres", "No Rio de Janeiro"], "c": 0, "d": "facil"}, {"n": "Os membros do Clube do Canhão eram apaixonados por quê?", "o": ["Armas e canhões", "Navios", "Cavalos", "Pintura"], "c": 0, "d": "facil"}, {"n": "Quem é o presidente do Clube do Canhão?", "o": ["Impey Barbicane", "Capitão Nicholl", "Michel Ardan", "J.T. Maston"], "c": 0, "d": "facil"}, {"n": "Qual é a ideia ousada de Barbicane?", "o": ["Construir um canhão gigante para atirar um projétil até a Lua", "Construir um navio voador", "Cavar um túnel até o centro da Terra", "Dar a volta ao mundo"], "c": 0, "d": "facil"}, {"n": "Para onde o clube quer enviar o projétil?", "o": ["Para a Lua", "Para Marte", "Para o Sol", "Para o fundo do mar"], "c": 0, "d": "facil"}, {"n": "Qual é o nome do canhão gigante da história?", "o": ["Columbiad", "Excalibur", "Big Bertha", "Apollo"], "c": 0, "d": "facil"}, {"n": "Em que país o canhão é construído?", "o": ["Estados Unidos", "França", "Inglaterra", "Rússia"], "c": 0, "d": "facil"}, {"n": "Em que estado americano o canhão é construído?", "o": ["Flórida", "Texas", "Califórnia", "Nova York"], "c": 0, "d": "facil"}, {"n": "Quem é o aventureiro francês que quer viajar dentro do projétil?", "o": ["Michel Ardan", "Capitão Nicholl", "J.T. Maston", "Phileas Fogg"], "c": 0, "d": "facil"}, {"n": "Quem é o grande rival de Barbicane?", "o": ["Capitão Nicholl", "Michel Ardan", "J.T. Maston", "Sir Francis"], "c": 0, "d": "facil"}, {"n": "O Capitão Nicholl ficou famoso fabricando o quê?", "o": ["Couraças e blindagens", "Canhões", "Navios", "Relógios"], "c": 0, "d": "facil"}, {"n": "Quantas pessoas acabam viajando dentro do projétil?", "o": ["Três", "Uma", "Duas", "Cinco"], "c": 0, "d": "facil"}, {"n": "De que metal é feito o projétil?", "o": ["Alumínio", "Ouro", "Madeira", "Vidro"], "c": 0, "d": "facil"}, {"n": "O projétil tinha o formato parecido com o de quê?", "o": ["Uma bala de canhão (obus)", "Uma caixa quadrada", "Uma bola de futebol", "Um barco"], "c": 0, "d": "facil"}, {"n": "A história começa logo depois de qual guerra?", "o": ["A Guerra Civil Americana", "A Segunda Guerra Mundial", "A Guerra de Troia", "As Cruzadas"], "c": 0, "d": "facil"}, {"n": "Quem é o secretário muito entusiasmado do Clube do Canhão?", "o": ["J.T. Maston", "Michel Ardan", "Capitão Nicholl", "Barbicane"], "c": 0, "d": "facil"}, {"n": "O canhão é construído deitado ou enterrado no chão na vertical?", "o": ["Enterrado na vertical", "Deitado de lado", "Pendurado numa torre", "Flutuando na água"], "c": 0, "d": "facil"}, {"n": "Barbicane e Nicholl começam a história como o quê?", "o": ["Inimigos/rivais", "Melhores amigos", "Irmãos", "Sócios"], "c": 0, "d": "facil"}, {"n": "'Da Terra à Lua' é um livro de qual tipo?", "o": ["Ficção científica e aventura", "Terror", "Romance de época só", "Biografia"], "c": 0, "d": "facil"}, {"n": "De qual país é Michel Ardan?", "o": ["França", "Estados Unidos", "Inglaterra", "Itália"], "c": 0, "d": "facil"}, {"n": "Quem propõe que a viagem leve pessoas dentro do projétil?", "o": ["Michel Ardan", "Barbicane", "Nicholl", "J.T. Maston"], "c": 0, "d": "facil"}, {"n": "No fim, quem viaja dentro do projétil?", "o": ["Barbicane, Nicholl e Ardan", "Só Ardan", "Só Barbicane", "Ninguém"], "c": 0, "d": "facil"}, {"n": "O projétil é lançado por um canhão ou por um foguete?", "o": ["Por um canhão", "Por um foguete", "Por um balão", "Por uma catapulta"], "c": 0, "d": "facil"}, {"n": "O Clube do Canhão fica entediado porque a guerra...", "o": ["Acabou, e não havia mais o que fazer", "Estava só começando", "Foi vencida por eles", "Mudou de país"], "c": 0, "d": "facil"}, {"n": "Júlio Verne também escreveu qual outro clássico de aventura?", "o": ["A Volta ao Mundo em 80 Dias", "Dom Quixote", "O Pequeno Príncipe", "Peter Pan"], "c": 0, "d": "facil"}, {"n": "Para a viagem dar certo, o canhão precisava ser muito...", "o": ["Grande e potente", "Pequeno e leve", "Colorido", "Silencioso"], "c": 0, "d": "facil"}, {"n": "O destino da viagem proposta é...", "o": ["A Lua", "Uma ilha", "Outro país", "O Polo Norte"], "c": 0, "d": "facil"}, {"n": "O que o projétil tem por dentro para proteger os passageiros?", "o": ["Estofado/acolchoamento", "Água", "Areia", "Nada"], "c": 0, "d": "facil"}, {"n": "Nicholl achava o plano de Barbicane possível ou impossível?", "o": ["Impossível", "Totalmente possível", "Fácil", "Chato"], "c": 0, "d": "facil"}, {"n": "Como o clube junta dinheiro para o projeto?", "o": ["Recebendo doações de vários países", "Vendendo canhões", "Roubando um banco", "Achando um tesouro"], "c": 0, "d": "facil"}, {"n": "Qual era a 'especialidade' do Clube do Canhão?", "o": ["Inventar e fabricar armas e canhões", "Cozinhar", "Construir pontes", "Plantar"], "c": 0, "d": "facil"}, {"n": "Quem comanda e organiza todo o projeto?", "o": ["Barbicane", "Ardan", "Nicholl", "Maston"], "c": 0, "d": "facil"}, {"n": "O grande objeto construído pelo clube é um...", "o": ["Canhão gigante", "Submarino", "Avião", "Trem"], "c": 0, "d": "facil"}, {"n": "Ardan traz ao projeto um espírito...", "o": ["Aventureiro e corajoso", "Medroso", "Preguiçoso", "Triste"], "c": 0, "d": "facil"}, {"n": "O livro foi escrito no século XIX (ano de 1865)?", "o": ["Sim, há muito tempo", "Não, foi no ano 2000", "Foi na Idade Média", "Foi antes de Cristo"], "c": 0, "d": "facil"}, {"n": "A viagem proposta era inédita porque levaria humanos para...", "o": ["O espaço, rumo à Lua", "O fundo do oceano", "Dentro de um vulcão", "Outro continente"], "c": 0, "d": "facil"}, {"n": "Qual astro brilha como destino do projétil?", "o": ["A Lua", "Uma estrela", "O planeta Saturno", "Um cometa"], "c": 0, "d": "facil"}, {"n": "O canhão gigante é apontado para onde?", "o": ["Para a Lua, no céu", "Para o mar", "Para uma montanha", "Para baixo"], "c": 0, "d": "facil"}, {"n": "Barbicane é mais um sonhador desorganizado ou um planejador?", "o": ["Um planejador, que faz contas", "Um desorganizado", "Um preguiçoso", "Um medroso"], "c": 0, "d": "facil"}, {"n": "A história mostra os americanos empolgados em...", "o": ["Lançar algo da Terra rumo à Lua", "Construir um castelo", "Achar petróleo", "Vencer uma corrida de cavalos"], "c": 0, "d": "facil"}, {"n": "Quem avisa para impedir uma briga perigosa entre Barbicane e Nicholl?", "o": ["J.T. Maston", "O presidente dos EUA", "A polícia", "Ninguém"], "c": 0, "d": "facil"}, {"n": "O que acontece com a rivalidade de Barbicane e Nicholl no fim?", "o": ["Eles fazem as pazes", "Ela piora para sempre", "Vira um processo", "Não muda nada"], "c": 0, "d": "facil"}, {"n": "O projétil de metal serve para...", "o": ["Levar os viajantes até a Lua", "Defender a cidade", "Pescar", "Guardar comida"], "c": 0, "d": "facil"}, {"n": "Qual era a rivalidade técnica entre Barbicane e Nicholl?", "o": ["Canhão (Barbicane) contra blindagem (Nicholl)", "Navio contra avião", "Espada contra escudo", "Carro contra trem"], "c": 0, "d": "medio"}, {"n": "Que enorme buraco é escavado para o canhão Columbiad?", "o": ["Cerca de 900 pés de profundidade", "10 metros apenas", "Um buraco raso", "Não havia buraco"], "c": 0, "d": "medio"}, {"n": "Por que escolheram a Flórida (e não o Texas) para o canhão?", "o": ["Pela latitude adequada para mirar a Lua", "Porque era mais barato", "Porque tinha praia", "Por sorteio"], "c": 0, "d": "medio"}, {"n": "Qual era o local exato da construção na Flórida?", "o": ["Stone's Hill, perto de Tampa", "O centro de Miami", "Uma ilha deserta", "O deserto do Texas"], "c": 0, "d": "medio"}, {"n": "Como Barbicane confirma os dados científicos do projeto?", "o": ["Consultando um observatório (de Cambridge)", "Perguntando ao prefeito", "Lendo um jornal", "Adivinhando"], "c": 0, "d": "medio"}, {"n": "O que o Capitão Nicholl propõe a Barbicane por causa do ódio?", "o": ["Um duelo", "Uma corrida", "Uma aposta de cartas", "Uma viagem"], "c": 0, "d": "medio"}, {"n": "Quem impede o duelo entre Barbicane e Nicholl?", "o": ["Michel Ardan, avisado por Maston", "O exército", "O presidente", "Aouda"], "c": 0, "d": "medio"}, {"n": "Quanto dinheiro, aproximadamente, é arrecadado para o projeto?", "o": ["Cerca de 5,5 milhões de dólares", "Cerca de 100 dólares", "Cerca de 1 bilhão", "Nada"], "c": 0, "d": "medio"}, {"n": "Qual país doa a maior quantia (cerca de 4 milhões)?", "o": ["Estados Unidos", "Inglaterra", "França", "Brasil"], "c": 0, "d": "medio"}, {"n": "Qual país, no começo, não doa nada para o projeto?", "o": ["Inglaterra", "Estados Unidos", "França", "Alemanha"], "c": 0, "d": "medio"}, {"n": "Por que a data do lançamento foi calculada com tanto cuidado?", "o": ["Para a Lua estar na posição mais próxima e a pino", "Para fazer sol no dia", "Para combinar com um feriado", "Sem motivo"], "c": 0, "d": "medio"}, {"n": "Que tipo de 'pólvora' especial é usado na explosão?", "o": ["Algodão-pólvora (fulmicotton)", "Açúcar", "Carvão comum", "Gasolina"], "c": 0, "d": "medio"}, {"n": "Onde o projétil de alumínio é fabricado?", "o": ["Em Albany, Nova York", "Na Flórida", "Em Paris", "No Texas"], "c": 0, "d": "medio"}, {"n": "Por que o projétil precisa ser tão bem preparado por dentro?", "o": ["Para proteger os passageiros do impacto do disparo", "Para ficar bonito", "Para pesar mais", "Para flutuar"], "c": 0, "d": "medio"}, {"n": "Qual é o maior obstáculo inicial do projeto?", "o": ["Conseguir dinheiro suficiente", "Achar a Lua no céu", "Encontrar Ardan", "Comprar um navio"], "c": 0, "d": "medio"}, {"n": "O que Barbicane precisa resolver antes de aceitar pessoas a bordo?", "o": ["Como elas sobreviverão à aceleração do disparo", "Que comida levar", "A cor do projétil", "O nome da nave"], "c": 0, "d": "medio"}, {"n": "O que a sugestão de Michel Ardan muda no projeto?", "o": ["Torna o projétil tripulado, com pessoas dentro", "Cancela a viagem", "Troca a Lua por Marte", "Diminui o canhão"], "c": 0, "d": "medio"}, {"n": "O que J.T. Maston tinha no lugar de uma das mãos?", "o": ["Um gancho de ferro", "Uma luva de ouro", "Uma mão de madeira", "Nada de diferente"], "c": 0, "d": "medio"}, {"n": "Por que, na vida real, um canhão não levaria pessoas à Lua?", "o": ["A aceleração brutal do disparo as mataria", "Faria muito barulho", "Gastaria muita pólvora", "A Lua é longe demais para ver"], "c": 0, "d": "medio"}, {"n": "O que torna a história 'científica', e não só fantasia?", "o": ["Verne faz cálculos e raciocínios reais", "Tem dragões", "Tem mágica", "É um sonho"], "c": 0, "d": "medio"}, {"n": "Qual posição da Lua eles aproveitam para mirar?", "o": ["Quando está mais perto da Terra e a pino sobre o local", "Quando está cheia e vermelha", "Quando some no céu", "Tanto faz"], "c": 0, "d": "medio"}, {"n": "O que Nicholl representa na história?", "o": ["O cético que duvida de tudo", "O herói principal", "O vilão que rouba", "O narrador"], "c": 0, "d": "medio"}, {"n": "Por que vários estados americanos disputaram sediar o projeto?", "o": ["Pela fama e pelo dinheiro que isso traria", "Por causa do clima", "Para ajudar Nicholl", "Por ordem do rei"], "c": 0, "d": "medio"}, {"n": "O que acontece no exato momento do lançamento?", "o": ["Uma explosão gigantesca lança o projétil ao céu", "O canhão entorta", "Começa a chover", "Nada funciona"], "c": 0, "d": "medio"}, {"n": "Por que escolher a latitude certa importava tanto?", "o": ["Para o canhão apontar direto para a Lua", "Para o clima ser quente", "Para ficar perto do mar", "Para ter sombra"], "c": 0, "d": "medio"}, {"n": "Que sentimento Michel Ardan desperta nos membros do clube?", "o": ["Admiração e empolgação", "Medo e raiva", "Tédio", "Inveja"], "c": 0, "d": "medio"}, {"n": "O que a viagem proposta tinha de inédito para a época?", "o": ["A ideia de levar humanos ao espaço, rumo à Lua", "Usar um canhão", "Cavar um buraco", "Pedir doações"], "c": 0, "d": "medio"}, {"n": "O que diferencia Barbicane de um sonhador comum?", "o": ["Ele planeja com cálculos e organização", "Ele só fala e não faz", "Ele tem sorte", "Ele é muito rico"], "c": 0, "d": "medio"}, {"n": "Como termina a rivalidade entre Barbicane e Nicholl?", "o": ["Vira parceria: viajam juntos", "Termina em tragédia", "Continua com processos", "Nunca se resolve"], "c": 0, "d": "medio"}, {"n": "Qual a importância do dinheiro internacional para o projeto?", "o": ["Sem ele, o canhão não seria construído", "Servia só para festas", "Não fez diferença", "Era proibido usar"], "c": 0, "d": "medio"}, {"n": "Para chegar à Lua, o projétil precisa vencer principalmente o quê?", "o": ["A gravidade e a distância da Terra", "O vento", "As nuvens", "O barulho"], "c": 0, "d": "medio"}, {"n": "Por que o projétil é feito de alumínio?", "o": ["É um metal forte e relativamente leve", "É o mais barato", "É colorido", "É mágico"], "c": 0, "d": "medio"}, {"n": "O que move Nicholl a apostar contra Barbicane?", "o": ["A certeza de que o plano é impossível", "O desejo de ajudar", "A amizade", "A fome"], "c": 0, "d": "medio"}, {"n": "O que o livro sugere sobre ciência e ousadia juntas?", "o": ["Com cálculo e coragem, ideias 'impossíveis' podem ser tentadas", "Que ciência não serve para nada", "Que ousadia é burrice", "Que é melhor não arriscar"], "c": 0, "d": "medio"}, {"n": "Qual é o papel de J.T. Maston na trama?", "o": ["Secretário entusiasmado que apoia Barbicane", "O grande vilão", "O dono do dinheiro", "O capitão do navio"], "c": 0, "d": "medio"}, {"n": "Por que o lançamento atrai grandes multidões?", "o": ["É um acontecimento histórico e espetacular", "Tinha comida grátis", "Era obrigatório ir", "Para ver Nicholl perder"], "c": 0, "d": "medio"}, {"n": "O nome 'Columbiad' lembra o quê?", "o": ["Um tipo de canhão americano potente da época", "Uma estrela", "Um navio pirata", "Uma cidade europeia"], "c": 0, "d": "medio"}, {"n": "Qual é o clima geral entre os americanos durante o projeto?", "o": ["Orgulho e empolgação nacional", "Medo e tristeza", "Indiferença", "Raiva"], "c": 0, "d": "medio"}, {"n": "O que Ardan acrescenta ao projeto, além de coragem?", "o": ["A ideia humana da viagem tripulada", "Mais dinheiro", "Um canhão novo", "Um mapa do tesouro"], "c": 0, "d": "medio"}, {"n": "Qual a função do observatório na história?", "o": ["Dar os dados científicos (distância, velocidade) do plano", "Vender ingressos", "Construir o canhão", "Guardar o projétil"], "c": 0, "d": "medio"}, {"n": "No fim, qual é a relação de Ardan com Barbicane e Nicholl?", "o": ["São companheiros de viagem", "São empregados dele", "São seus inimigos", "Não se conhecem"], "c": 0, "d": "medio"}, {"n": "Qual é o grande feito que empolga os EUA na história?", "o": ["Lançar algo da Terra rumo à Lua", "Vencer uma corrida", "Construir uma ponte", "Achar ouro"], "c": 0, "d": "medio"}, {"n": "O que torna o disparo perigoso para quem vai dentro?", "o": ["A força enorme da aceleração", "O frio do espaço", "A falta de comida", "O escuro"], "c": 0, "d": "medio"}, {"n": "A história mistura ciência com qual outro ingrediente?", "o": ["Humor/ironia sobre a obsessão por armas", "Terror e fantasmas", "Romance triste", "Mistério policial"], "c": 0, "d": "medio"}, {"n": "Por que o projétil acaba sendo tripulado, e não vazio?", "o": ["Por causa da proposta ousada de Ardan", "Por engano", "Por ordem do governo", "Porque ninguém quis ficar"], "c": 0, "d": "medio"}, {"n": "O canhão Columbiad é construído onde, em relação ao chão?", "o": ["Fundo dentro da terra, apontando para cima", "Numa montanha de gelo", "Sobre um navio", "No alto de um prédio"], "c": 0, "d": "medio"}, {"n": "Qual era a 'origem' do Clube do Canhão antes da grande ideia?", "o": ["Inventar armas e canhões na guerra", "Explorar o mar", "Estudar estrelas", "Fazer mapas"], "c": 0, "d": "medio"}, {"n": "O que a chegada de Ardan provoca no público?", "o": ["Grande curiosidade e entusiasmo", "Pânico geral", "Tédio", "Protestos"], "c": 0, "d": "medio"}, {"n": "Qual é o título completo do livro, com o tempo de viagem que Verne 'prometia'?", "o": ["Da Terra à Lua, viagem direta em 97 horas e 20 minutos", "Da Terra à Lua em 7 dias", "A Grande Viagem Lunar", "Rumo às Estrelas"], "c": 0, "d": "dificil"}, {"n": "Como se chama a continuação que conta a viagem dos três?", "o": ["Ao Redor da Lua", "A Volta ao Mundo", "Vinte Mil Léguas Submarinas", "A Ilha Misteriosa"], "c": 0, "d": "dificil"}, {"n": "Por que o final do primeiro livro deixa o leitor em suspense?", "o": ["O projétil é lançado, mas o destino dos três fica em aberto", "Barbicane desiste no fim", "O canhão explode", "A Lua some"], "c": 0, "d": "dificil"}, {"n": "Em vez de pousar, o que o projétil acaba fazendo (revelado depois)?", "o": ["Entra em órbita ao redor da Lua", "Cai no oceano logo após o disparo", "Volta para o canhão", "Vira pó"], "c": 0, "d": "dificil"}, {"n": "O personagem Michel Ardan foi inspirado em quem da vida real?", "o": ["No fotógrafo Nadar (Ardan é anagrama de Nadar)", "Em Napoleão", "No próprio Júlio Verne", "Em Thomas Edison"], "c": 0, "d": "dificil"}, {"n": "Por que a ideia do canhão é cientificamente furada para humanos?", "o": ["A aceleração para atingir a velocidade de escape esmagaria os passageiros", "O canhão é pequeno demais", "A Lua é leve demais", "Falta pólvora no mundo"], "c": 0, "d": "dificil"}, {"n": "Como se chama a velocidade mínima para 'escapar' da gravidade da Terra?", "o": ["Velocidade de escape", "Velocidade da luz", "Velocidade do som", "Velocidade máxima"], "c": 0, "d": "dificil"}, {"n": "Que semelhança curiosa o livro tem com a missão Apollo 11 (1969)?", "o": ["Lançamento na Flórida e retorno no Pacífico, com cerca de 3 tripulantes", "Usou exatamente um canhão", "Durou 80 dias", "Foi feita por franceses"], "c": 0, "d": "dificil"}, {"n": "Qual filme mudo de 1902 foi inspirado por essa história?", "o": ["'Viagem à Lua', de Georges Méliès", "'Star Wars'", "'O Encouraçado Potemkin'", "'King Kong'"], "c": 0, "d": "dificil"}, {"n": "O que a obsessão do Clube do Canhão satiriza?", "o": ["O fascínio por armas, agora virado para um feito grandioso", "O amor pela natureza", "A preguiça dos cientistas", "A moda da época"], "c": 0, "d": "dificil"}, {"n": "Por que a parceria de um francês (Ardan) com americanos é simbólica?", "o": ["Mostra a ciência e a aventura unindo nações", "Indica uma guerra entre eles", "Não tem significado", "Mostra que franceses mandam mais"], "c": 0, "d": "dificil"}, {"n": "Qual detalhe do projétil 'antecipou' as cápsulas espaciais reais?", "o": ["Ser de alumínio, em forma de cápsula e com tripulação reduzida", "Ter motor a jato", "Ter painéis solares", "Ter rodas"], "c": 0, "d": "dificil"}, {"n": "Por que a escolha da Flórida por Verne 'acertou' o futuro?", "o": ["Décadas depois, a NASA passou a lançar foguetes da Flórida", "Lá nasceu Júlio Verne", "É o centro dos EUA", "Tem o maior porto do mundo"], "c": 0, "d": "dificil"}, {"n": "O que o duelo evitado entre Barbicane e Nicholl revela?", "o": ["Que um objetivo comum transforma inimigos em companheiros", "Que duelos são divertidos", "Que Barbicane era covarde", "Que Nicholl venceu"], "c": 0, "d": "dificil"}, {"n": "O que significa o projétil 'virar um satélite'?", "o": ["Ficar girando em volta da Lua em vez de pousar", "Explodir no espaço", "Voltar para a Terra", "Ir até o Sol"], "c": 0, "d": "dificil"}, {"n": "Por que o livro é considerado pioneiro da ficção científica?", "o": ["Usa ciência real para imaginar uma viagem espacial", "Foi o primeiro livro do mundo", "Não tem nenhuma ciência", "Foi escrito por um astronauta"], "c": 0, "d": "dificil"}, {"n": "Que termo, ligado a essa obra, teria sido usado pela primeira vez para o projétil?", "o": ["'Nave espacial' (space-ship)", "'Foguete'", "'Satélite'", "'Estação espacial'"], "c": 0, "d": "dificil"}, {"n": "Qual era o grande perigo da enorme aceleração do disparo?", "o": ["Esmagar os tripulantes com a força", "Queimar o combustível cedo", "Apagar as luzes", "Derreter o canhão"], "c": 0, "d": "dificil"}, {"n": "Como Verne tenta dar credibilidade à viagem?", "o": ["Com cálculos de distância, velocidade e posição da Lua", "Com depoimentos de astronautas", "Com fotos da Lua", "Com mágica"], "c": 0, "d": "dificil"}, {"n": "O que a rivalidade Texas x Flórida mostra sobre o projeto?", "o": ["Que sediar o lançamento dava fama e gerava disputa entre estados", "Que os dois odiavam a Lua", "Que ninguém queria o projeto", "Que o Texas venceu"], "c": 0, "d": "dificil"}, {"n": "Por que a fase da Lua e a data são escolhidas com precisão?", "o": ["Para o projétil encontrar a Lua no ponto e no momento certos", "Para combinar com o aniversário de Barbicane", "Para evitar a chuva", "Por superstição"], "c": 0, "d": "dificil"}, {"n": "O que J.T. Maston faz que ajuda a evitar uma tragédia?", "o": ["Avisa Ardan sobre o duelo, que é então impedido", "Conserta o canhão", "Empresta dinheiro", "Esconde Nicholl"], "c": 0, "d": "dificil"}, {"n": "Qual lição a história dá sobre transformar destruição em descoberta?", "o": ["As armas da guerra são redirecionadas para explorar o espaço", "Que a guerra é necessária", "Que armas não servem para nada", "Que descobrir é perigoso"], "c": 0, "d": "dificil"}, {"n": "O que o ceticismo de Nicholl acrescenta à história?", "o": ["Tensão e um contraponto realista às ideias de Barbicane", "Comédia boba", "Romance", "Mistério policial"], "c": 0, "d": "dificil"}, {"n": "Por que se diz que Verne 'previu' coisas da era espacial?", "o": ["Vários detalhes lembram as missões reais à Lua quase um século depois", "Ele viajou no tempo", "Ele trabalhou na NASA", "Ele era astronauta"], "c": 0, "d": "dificil"}, {"n": "O que o projétil precisa fazer para não cair de volta à Terra?", "o": ["Atingir uma velocidade altíssima para vencer a gravidade", "Ser bem leve", "Ser pintado de branco", "Ser lançado à noite"], "c": 0, "d": "dificil"}, {"n": "Qual a relação entre o canhão 'Columbiad' e os Estados Unidos?", "o": ["Era um tipo de canhão americano; reforça o orgulho nacional na trama", "Foi comprado da França", "Era um navio inglês", "Era um brinquedo"], "c": 0, "d": "dificil"}, {"n": "Por que a obra mistura humor e ciência?", "o": ["Verne ironiza a obsessão por armas enquanto leva a ciência a sério", "Para enganar o leitor", "Porque não sabia o que escrever", "Para ser um livro de piadas"], "c": 0, "d": "dificil"}, {"n": "Depois de tanto planejamento, o que acontece com o projeto?", "o": ["É lançado com sucesso, mas o resultado final fica em aberto", "Fracassa antes de começar", "É cancelado pelo governo", "Some sem explicação"], "c": 0, "d": "dificil"}, {"n": "Como o livro trata a coragem de Michel Ardan?", "o": ["Como ousadia admirável, quase loucura, movida por um ideal", "Como pura tolice", "Como covardia disfarçada", "Como falta de educação"], "c": 0, "d": "dificil"}, {"n": "O que a história sugere sobre sonhar grande?", "o": ["Com ciência e determinação, vale tentar o 'impossível'", "Que sonhar é perda de tempo", "Que só a sorte importa", "Que é melhor não tentar"], "c": 0, "d": "dificil"}, {"n": "Qual a função do Observatório de Cambridge na trama?", "o": ["Fornecer os dados científicos que tornam o plano 'viável'", "Construir o projétil", "Vender ingressos do lançamento", "Treinar os viajantes"], "c": 0, "d": "dificil"}, {"n": "O que diferencia Barbicane de um aventureiro impulsivo?", "o": ["Ele age com cálculo, método e liderança", "Ele age só pela emoção", "Ele tem medo de tudo", "Ele nunca decide nada"], "c": 0, "d": "dificil"}, {"n": "Qual é o 'gancho' que faz o leitor querer a continuação?", "o": ["Não se sabe o destino dos três no fim do primeiro livro", "Barbicane some misteriosamente", "O canhão é roubado", "A Lua desaparece"], "c": 0, "d": "dificil"}, {"n": "O que a obra antecipa sobre a exploração espacial?", "o": ["Que grandes feitos exigem união de recursos e de nações", "Que tudo seria feito por uma pessoa só", "Que nunca chegaríamos à Lua", "Que seria fácil e barato"], "c": 0, "d": "dificil"}, {"n": "Por que a velocidade de escape é o grande desafio físico do plano?", "o": ["Sem ela, nada lançado da Terra consegue chegar à Lua", "Ela faz o canhão derreter", "Ela deixa tudo invisível", "Ela não existe de verdade"], "c": 0, "d": "dificil"}, {"n": "Qual o papel do dinheiro estrangeiro no sucesso do projeto?", "o": ["Viabiliza financeiramente a construção do canhão", "Serve só de enfeite", "Atrapalha o plano", "É devolvido no fim"], "c": 0, "d": "dificil"}, {"n": "O que a amizade final entre rivais ensina?", "o": ["Que um objetivo maior pode superar antigas inimizades", "Que é melhor não ter amigos", "Que rivais nunca mudam", "Que vencer é tudo"], "c": 0, "d": "dificil"}, {"n": "Por que o livro faz parte das 'Viagens Extraordinárias' de Verne?", "o": ["É uma das aventuras científicas que ele criou para explorar o mundo e o universo", "É um livro de receitas", "É uma biografia real", "É um livro escolar de matemática"], "c": 0, "d": "dificil"}, {"n": "O que a escolha do alumínio mostra sobre Júlio Verne?", "o": ["Atenção a materiais reais e suas propriedades (leve e resistente)", "Que ele gostava de coisas caras", "Que ele não pesquisava nada", "Que preferia ouro"], "c": 0, "d": "dificil"}, {"n": "Como a obra equilibra realidade e imaginação?", "o": ["Parte de ciência real e estende para uma façanha imaginada", "É 100% verdade", "É 100% fantasia sem lógica", "Copia outro livro"], "c": 0, "d": "dificil"}, {"n": "O que o lançamento do projétil representa no enredo?", "o": ["O clímax de todo o planejamento do clube", "Apenas um detalhe sem importância", "O começo da história", "Uma cena cortada"], "c": 0, "d": "dificil"}, {"n": "Qual é a mensagem final que a história deixa?", "o": ["Curiosidade, ousadia e ciência levam a humanidade além de seus limites", "Que é perigoso ter ideias", "Que dinheiro é tudo", "Que ninguém deve sonhar"], "c": 0, "d": "dificil"}, {"n": "Por que a obra de Verne inspirou astronautas reais, como os da Apollo?", "o": ["Pelos paralelos com a viagem real à Lua (Flórida, Pacífico, tripulação)", "Porque ensinava a pilotar foguetes", "Porque dava o mapa da Lua", "Porque era um manual da NASA"], "c": 0, "d": "dificil"}, {"n": "O que o projétil tripulado simboliza no livro?", "o": ["O sonho humano de ir além da Terra", "O fim das viagens", "O medo do desconhecido", "A volta para casa"], "c": 0, "d": "dificil"}, {"n": "Quanto tempo Júlio Verne dizia que a viagem direta levaria?", "o": ["97 horas e 20 minutos", "80 dias", "Um ano inteiro", "10 minutos"], "c": 0, "d": "medio"}, {"n": "Qual era o formato geral do canhão Columbiad montado no chão?", "o": ["Um tubo enorme apontado para cima", "Uma bola de ferro", "Uma caixa quadrada", "Um anel"], "c": 0, "d": "medio"}, {"n": "Júlio Verne achava mesmo que um canhão levaria gente à Lua com segurança?", "o": ["Não; ele conhecia os limites, mas usou a ideia para imaginar a aventura", "Sim, tinha certeza absoluta", "Ele nunca pensou nisso", "Ele copiou da NASA"], "c": 0, "d": "dificil"}, {"n": "O entusiasmo do público com o lançamento, no livro, lembra o quê nos dias de hoje?", "o": ["A empolgação com lançamentos espaciais", "Jogos de futebol", "Eleições", "Feiras de comida"], "c": 0, "d": "dificil"}, {"n": "Por que o plano da viagem tripulada inclui comida, água e ar no projétil?", "o": ["Porque os três viajantes precisariam sobreviver durante o caminho", "Para vender na Lua", "Para enganar Nicholl", "O plano não inclui nada disso"], "c": 0, "d": "dificil"}];
+const PER_PARTIDA = QUIZ_CONFIG.perPartida||15, TEMPO = QUIZ_CONFIG.tempo||20;
+
+
+/* ====== CONFIG DO RANKING ONLINE (planilha) ====== */
+const SHEET_URL = QUIZ_CONFIG.sheetUrl||"";
+
+/* ====== MULTIPLICADORES POR MODO ====== */
+const MODE_MULT = {facil:1, medio:1.5, dificil:2, aleatorio:2};
+
+const AVATARS=(QUIZ_CONFIG.avatars&&QUIZ_CONFIG.avatars.length)?QUIZ_CONFIG.avatars:['🦊','🐯','🦉','🐧','🐲','🦅','🐙','🦁','🐼','🦈','🦜','🐺'];
+const AV_FREE = 5;
+const AV_UNLOCKS = [
+  {i:5,  hint:'30 acertos no total',   test:s=>s.totalCorrect>=30},
+  {i:6,  hint:'60 acertos no total',   test:s=>s.totalCorrect>=60},
+  {i:7,  hint:'recorde de 250 pontos', test:s=>s.bestScore>=250},
+  {i:8,  hint:'jogar 3 partidas',      test:s=>s.games>=3},
+  {i:9,  hint:'sequencia de 5',        test:s=>s.bestStreak>=5},
+  {i:10, hint:'gabaritar (15/15)',     test:s=>s.perfects>=1},
+  {i:11, hint:'120 acertos no total',  test:s=>s.totalCorrect>=120}
+];
+const ROUTE=QUIZ_CONFIG.rota;
+
+let chosenLevel='aleatorio', chosenAv=AVATARS[0], playerName='', gameMode='aleatorio';
+let deck=[], idx=0, score=0, correctCount=0, streak=0, maxStreak=0,
+    totalTime=0, timer=null, timeLeft=TEMPO, answered=false, log=[], soundOn=true;
+let curCorrect=0, curOpts=[], bonusPts=0, bonusKind='', shown=[];
+
+const $=id=>document.getElementById(id);
+const show=id=>{['home','quiz','result'].forEach(s=>$(s).classList.add('hide'));$(id).classList.remove('hide')};
+const LS={
+  name:'quiz_netao_name', av:'quiz_netao_av', rank:'quiz_netao_rank', snd:'quiz_netao_snd',
+  best:'quiz_netao_best', stats:'quiz_netao_stats', recent:'quiz_netao_recent'
+};
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch{return d}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
+
+/* ---------- ESTATISTICAS PERSISTENTES ---------- */
+function statsGet(){
+  try{return Object.assign({totalCorrect:0,games:0,bestScore:0,bestStreak:0,perfects:0},JSON.parse(localStorage.getItem(LS.stats))||{})}
+  catch{return {totalCorrect:0,games:0,bestScore:0,bestStreak:0,perfects:0}}
+}
+function statsSet(s){lsSet(LS.stats,JSON.stringify(s))}
+function unlockedSet(){
+  const s=statsGet(), set=new Set();
+  for(let i=0;i<AV_FREE;i++)set.add(i);
+  AV_UNLOCKS.forEach(u=>{if(u.test(s))set.add(u.i)});
+  return set;
+}
+function recentGet(){try{return JSON.parse(localStorage.getItem(LS.recent))||[]}catch{return[]}}
+function recentSet(a){lsSet(LS.recent,JSON.stringify(a.slice(-45)))}
+
+/* ---------- SONS ---------- */
+let actx=null;
+function beep(freqs,dur=0.12,type='sine'){
+  if(!soundOn)return;
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    let t=actx.currentTime;
+    freqs.forEach((f,i)=>{
+      const o=actx.createOscillator(),g=actx.createGain();
+      o.type=type;o.frequency.value=f;
+      o.connect(g);g.connect(actx.destination);
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.18,t+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      o.start(t);o.stop(t+dur);
+      t+=dur*0.9;
+    });
+  }catch{}
+}
+const sfx={
+  right:()=>beep([660,880],0.12,'triangle'),
+  wrong:()=>beep([220,160],0.18,'sawtooth'),
+  streak:()=>beep([660,880,1100],0.1,'triangle'),
+  win:()=>beep([523,659,784,1046],0.15,'triangle'),
+  tap:()=>beep([440],0.05,'sine')
+};
+$('sndBtn').onclick=()=>{soundOn=!soundOn;$('sndBtn').textContent=soundOn?'🔊':'🔇';lsSet(LS.snd,soundOn?'1':'0');if(soundOn)sfx.tap()};
+
+/* ---------- INIT HOME ---------- */
+function initHome(){
+  soundOn = lsGet(LS.snd,'1')==='1'; $('sndBtn').textContent=soundOn?'🔊':'🔇';
+  playerName = lsGet(LS.name,''); $('homeName').value=playerName;
+  chosenAv = lsGet(LS.av,AVATARS[0]);
+  const unlocked=unlockedSet();
+  if(!unlocked.has(AVATARS.indexOf(chosenAv))){chosenAv=AVATARS[0];lsSet(LS.av,chosenAv);}
+  const box=$('avatars'); box.innerHTML='';
+  AVATARS.forEach((a,i)=>{
+    const b=document.createElement('button');
+    const locked=!unlocked.has(i);
+    b.className='av'+(a===chosenAv?' on':'')+(locked?' locked':'');
+    b.textContent=locked?'🔒':a;
+    if(locked){const u=AV_UNLOCKS.find(x=>x.i===i);b.title=u?('Desbloqueia: '+u.hint):'Bloqueado';}
+    else b.onclick=()=>{chosenAv=a;lsSet(LS.av,a);sfx.tap();document.querySelectorAll('.av').forEach(x=>x.classList.remove('on'));b.classList.add('on')};
+    box.appendChild(b);
+  });
+  const best=parseInt(lsGet(LS.best,'0'))||0;
+  $('homeBest').textContent=best>0?('🏅 Seu recorde: '+best+' pontos'):'';
+}
+$('levels').addEventListener('click',e=>{const b=e.target.closest('.lvl');if(!b)return;sfx.tap();document.querySelectorAll('.lvl').forEach(x=>x.classList.remove('on'));b.classList.add('on');chosenLevel=b.dataset.l});
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function pick(arr,n,recent){
+  const fresh=shuffle(arr.filter(q=>!recent.has(BANCO.indexOf(q))));
+  const old=shuffle(arr.filter(q=>recent.has(BANCO.indexOf(q))));
+  return fresh.concat(old).slice(0,n);
+}
+function buildDeck(){
+  const recent=new Set(recentGet());
+  let out;
+  if(chosenLevel==='aleatorio'){
+    const f=pick(BANCO.filter(q=>q.d==='facil'),4,recent);
+    const m=pick(BANCO.filter(q=>q.d==='medio'),6,recent);
+    const d=pick(BANCO.filter(q=>q.d==='dificil'),5,recent);
+    out=shuffle(f.concat(m,d));
+  }else{
+    out=pick(BANCO.filter(q=>q.d===chosenLevel),PER_PARTIDA,recent);
+    if(out.length<PER_PARTIDA)out=out.concat(pick(BANCO.filter(q=>q.d!==chosenLevel),PER_PARTIDA-out.length,recent));
+  }
+  return out.slice(0,PER_PARTIDA);
+}
+
+function startGame(){
+  playerName=($('homeName').value||'Explorador').trim().slice(0,14); lsSet(LS.name,playerName);
+  gameMode=chosenLevel;
+  deck=buildDeck();
+  bonusKind=Math.random()<0.5?'pergunta':'relampago';
+  const used=new Set(deck);
+  const poolB=shuffle(BANCO.filter(q=>!used.has(q)));
+  if(bonusKind==='pergunta'){
+    const bq=poolB.find(q=>q.d==='dificil')||poolB.find(q=>q.d==='medio')||poolB[0];
+    if(bq)deck.push(Object.assign({},bq,{bonus:true,bk:'pergunta'}));
+  }else{
+    poolB.slice(0,3).forEach(q=>deck.push(Object.assign({},q,{bonus:true,bk:'relampago'})));
+  }
+  idx=0;score=0;correctCount=0;streak=0;maxStreak=0;totalTime=0;log=[];bonusPts=0;shown=[];
+  show('quiz'); buildRouteMap(); render();
+}
+
+/* ---------- COMBO + MAPA DA VIAGEM ---------- */
+function comboMult(st){if(st>=5)return 3;if(st>=4)return 2.5;if(st>=3)return 2;if(st>=2)return 1.5;return 1}
+function buildRouteMap(){
+  const m=$('routemap');if(!m)return;
+  let dots='';ROUTE.forEach(c=>{dots+='<span class="route-dot"><b>•</b><em>'+c+'</em></span>'});
+  m.innerHTML='<div class="route-line"><i id="routefill"></i></div><div class="route-dots">'+dots+'</div><div class="route-ship" id="routeship">'+(QUIZ_CONFIG.mapIcon||'🚢')+'</div>';
+  updateRouteMap();
+}
+function updateRouteMap(){
+  const pct=correctCount/PER_PARTIDA*100;
+  const f=$('routefill');if(f)f.style.width=pct+'%';
+  const sh=$('routeship');if(sh)sh.style.left=pct+'%';
+}
+function updateCombo(){
+  const cm=comboMult(streak), el=$('combo');if(!el)return;
+  if(streak>=2 && cm>1){el.textContent='🔥 Combo ×'+cm;el.classList.remove('hide')}
+  else el.classList.add('hide');
+}
+
+const LABELS={facil:'facil',medio:'medio',dificil:'dificil'};
+function render(){
+  answered=false; const q=deck[idx]; const isB=!!q.bonus;
+  const bi=BANCO.indexOf(q); if(bi>=0)shown.push(bi);
+  if(isB){
+    $('qlabel').innerHTML = q.bk==='relampago' ? ('⚡ RELÂMPAGO <b>'+(idx-PER_PARTIDA+1)+'</b>/3') : '⭐ PERGUNTA BÔNUS';
+    $('quizTop').classList.add('bonus');
+    if(idx===PER_PARTIDA)showBadgeToast(q.bk==='relampago'?'⚡ RODADA RELÂMPAGO! 3 perguntas rápidas':'⭐ PERGUNTA BÔNUS! Vale o dobro');
+  }else{
+    $('qlabel').innerHTML='Pergunta <b>'+(idx+1)+'</b>/'+PER_PARTIDA;
+    $('quizTop').classList.remove('bonus');
+  }
+  $('livescore').textContent=score;
+  $('prog').style.width=(isB?100:(idx/PER_PARTIDA*100))+'%';
+  updateCombo();
+  const chip=$('dchip');
+  if(isB){chip.textContent=(q.bk==='relampago'?'⚡ relâmpago':'⭐ bônus');chip.className='dchip bonus'}
+  else{chip.textContent=LABELS[q.d];chip.className='dchip '+q.d}
+  $('qtext').textContent=q.n; $('feedback').textContent='';$('feedback').className='feedback';
+  const keys=['A','B','C','D'];
+  const order=shuffle([...Array(q.o.length).keys()]);
+  curOpts=order.map(j=>q.o[j]); curCorrect=order.indexOf(q.c);
+  $('opts').innerHTML='';
+  curOpts.forEach((opt,i)=>{const b=document.createElement('button');b.className='opt';
+    b.innerHTML='<span class="key">'+keys[i]+'</span><span>'+opt+'</span>';
+    b.onclick=()=>choose(i,b);$('opts').appendChild(b)});
+  startTimer(isB?(q.bk==='relampago'?10:15):TEMPO);
+}
+function startTimer(dur){
+  dur=dur||TEMPO;
+  clearInterval(timer);timeLeft=dur;
+  const bar=$('timerbar');bar.style.width='100%';bar.classList.remove('warn');
+  timer=setInterval(()=>{
+    timeLeft-=0.1;totalTime+=0.1;
+    const pct=Math.max(0,timeLeft/dur*100);bar.style.width=pct+'%';
+    if(timeLeft<=Math.min(6,dur*0.35))bar.classList.add('warn');
+    if(timeLeft<=0){clearInterval(timer);choose(-1,null)}
+  },100);
+}
+function choose(i,btn){
+  if(answered)return;answered=true;clearInterval(timer);
+  const q=deck[idx],opts=[...document.querySelectorAll('.opt')], isB=!!q.bonus;
+  opts.forEach(o=>o.disabled=true);if(opts[curCorrect])opts[curCorrect].classList.add('correct');
+  const fb=$('feedback'); const ok=(i===curCorrect);
+  log.push({q:q.n,your:i,correct:curCorrect,opts:curOpts});
+  if(ok){
+    streak++; maxStreak=Math.max(maxStreak,streak);
+    const diffBonus={facil:5,medio:8,dificil:12}[q.d], timeBonus=Math.round(timeLeft);
+    const cm=comboMult(streak), mm=MODE_MULT[gameMode]||1;
+    let pts, det;
+    if(isB){
+      if(q.bk==='pergunta'){pts=Math.round((diffBonus+timeBonus)*mm*2);det='<small>⭐ vale o DOBRO!</small>'}
+      else{pts=Math.round((diffBonus+timeBonus)*1.5);det='<small>⚡ relâmpago ×1.5</small>'}
+      bonusPts+=pts;
+    }else{
+      pts=Math.round((diffBonus+timeBonus)*cm*mm); correctCount++;
+      let extra='';if(cm>1)extra+=' · combo ×'+cm;if(mm>1)extra+=' · modo ×'+mm;
+      det='<small>'+diffBonus+' '+LABELS[q.d]+' + '+timeBonus+' tempo'+extra+'</small>';
+    }
+    score+=pts;
+    if(streak>=3 && !isB){fb.innerHTML='🔥 '+streak+' seguidas! <b>+'+pts+'</b>'+det;sfx.streak()}
+    else{fb.innerHTML=(isB?'⭐ Boa! ':'✓ Acertou! ')+'<b>+'+pts+'</b>'+det;sfx.right()}
+    fb.className='feedback ok';
+  }else{
+    streak=0;if(btn)btn.classList.add('wrong');
+    fb.textContent=i===-1?'⏰ Tempo esgotado!':'✗ Quase! A certa esta em verde.';fb.className='feedback no';sfx.wrong();
+  }
+  $('livescore').textContent=score;
+  if(!isB)$('prog').style.width=((idx+1)/PER_PARTIDA*100)+'%';
+  updateRouteMap();updateCombo();
+  setTimeout(()=>{idx++;idx<deck.length?render():finish()},1500);
+}
+
+/* ---------- BADGES / ESTRELAS / PATENTE ---------- */
+function earnedBadges(){
+  const b=[];
+  if(correctCount===PER_PARTIDA)b.push('🚀 Missão perfeita!');
+  if(correctCount>=PER_PARTIDA*0.8)b.push('🛰️ Navegador espacial');
+  if(maxStreak>=5)b.push('🔥 '+maxStreak+' em sequencia');
+  const dificeis=log.filter((l,k)=>deck[k]&&deck[k].d==='dificil'&&l.your===l.correct).length;
+  if(dificeis>=3)b.push('🧠 Mestre das dificeis');
+  if(totalTime< PER_PARTIDA*8 && correctCount>=PER_PARTIDA*0.6)b.push('⚡ Raio veloz');
+  if(correctCount>=PER_PARTIDA*0.5 && !b.length)b.push('👨‍🚀 Bom tripulante');
+  return b;
+}
+function starsFor(pp){if(pp>=0.9)return 5;if(pp>=0.75)return 4;if(pp>=0.55)return 3;if(pp>=0.35)return 2;return 1}
+const PATENTES=['Cadete','Aspirante','Astronauta','Comandante','Capitão da Missão'];
+function confetti(){
+  const cols=['#c44a3d','#c9962a','#2c6e8f','#3f7d54','#ece0c4'];
+  for(let n=0;n<90;n++){
+    const c=document.createElement('div');c.className='confetti';
+    c.style.left=Math.random()*100+'vw';
+    c.style.background=cols[n%cols.length];
+    c.style.animationDelay=(Math.random()*0.7)+'s';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),3000);
+  }
+}
+function finish(){
+  let varietyBonus=0;
+  if(gameMode==='aleatorio'){
+    const ds=new Set(deck.slice(0,PER_PARTIDA).map(q=>q.d));
+    if(ds.size>=3){varietyBonus=Math.round(score*0.25);score+=varietyBonus}
+  }
+  const pp=correctCount/PER_PARTIDA, st=starsFor(pp);
+  $('bigScore').textContent=score;
+  $('stars').textContent='★★★★★'.slice(0,st)+'☆☆☆☆☆'.slice(0,5-st);
+  $('patente').textContent=PATENTES[st-1];
+  $('pctAcerto').textContent=Math.round(pp*100)+'% de acerto';
+  $('stCorrect').textContent=correctCount+'/'+PER_PARTIDA;
+  $('stStreak').textContent=maxStreak;$('stTime').textContent=Math.round(totalTime)+'s';
+  let medal,msg;
+  if(st>=5){medal='🥇';msg='Comandante da missão! Conhece o livro de cabo a rabo.'}
+  else if(st>=4){medal='🥈';msg='Excelente astronauta! Quase tudo no lugar.'}
+  else if(st>=3){medal='🥉';msg='Bom tripulante! Vale reler alguns trechos.'}
+  else{medal='🧭';msg='A decolagem mal começou - bora reler e tentar de novo!'}
+  $('medal').textContent=medal;$('rmsg').textContent=msg;
+  const prevBest=parseInt(lsGet(LS.best,'0'))||0, rec=score>prevBest;
+  const rl=$('recordLine');rl.classList.remove('big');
+  if(rec){lsSet(LS.best,String(score));rl.textContent='🎉 NOVO RECORDE! '+score+' pontos';rl.classList.add('big')}
+  else rl.textContent='Seu recorde: '+prevBest+' pontos';
+  const bs=earnedBadges();
+  if(varietyBonus>0)bs.unshift('🎲 Bonus variedade +'+varietyBonus);
+  if(bonusPts>0)bs.unshift((bonusKind==='pergunta'?'⭐ Pergunta bonus +':'⚡ Relampago +')+bonusPts);
+  const bbox=$('badges');bbox.innerHTML='';
+  bs.forEach((t,k)=>{setTimeout(()=>{const sp=document.createElement('span');sp.className='bdg';sp.textContent=t;bbox.appendChild(sp)},k*220)});
+  const stats=statsGet(), before=unlockedSet();
+  stats.totalCorrect+=correctCount;stats.games+=1;
+  stats.bestScore=Math.max(stats.bestScore,score);
+  stats.bestStreak=Math.max(stats.bestStreak,maxStreak);
+  if(correctCount===PER_PARTIDA)stats.perfects+=1;
+  statsSet(stats);
+  const after=unlockedSet(), newly=[...after].filter(x=>!before.has(x));
+  $('rankBox').classList.add('hide');$('revBox').classList.add('hide');
+  sfx.win();show('result');
+  if(rec)confetti();
+  if(bs.length)showBadgeToast(bs[0]);
+  newly.forEach((x,k)=>setTimeout(()=>showBadgeToast('🔓 Novo avatar: '+AVATARS[x]),(k+1)*1500));
+  recentSet(recentGet().concat(shown));
+  autoSave();
+}
+function showBadgeToast(t){
+  const el=document.createElement('div');el.className='badge-toast';
+  el.innerHTML='<span class="bi">🏅</span>'+t;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),2600);
+}
+
+/* ---------- PLACAR (online via planilha + fallback local) ---------- */
+function localRank(){try{return JSON.parse(localStorage.getItem(LS.rank))||[]}catch{return[]}}
+function pushLocal(e){const r=localRank();r.push(e);lsSet(LS.rank,JSON.stringify(r));return r}
+let rankMode='score', lastGroups=[], lastMyName=null;
+function renderRank(list,myName,status){
+  const map=new Map();
+  list.forEach(r=>{
+    const key=((r.n||'?').trim().toLowerCase())||'?';
+    const sc=Number(r.s)||0;
+    let g=map.get(key);
+    if(!g){g={nome:(r.n||'?'),av:r.a||'🧭',best:sc,grade:r.g,tentativas:0,xp:0,scores:[]};map.set(key,g);}
+    g.tentativas++; g.xp+=sc; g.scores.push(sc);
+    if(sc>g.best){g.best=sc;g.grade=r.g;g.av=r.a||g.av;g.nome=r.n||g.nome;}
+  });
+  lastGroups=[...map.values()]; lastMyName=myName;
+  $('rstatus').textContent=status||'';
+  $('rankBox').classList.remove('hide');
+  drawRank();
+}
+function drawRank(){
+  const box=$('ranklist'); box.innerHTML='';
+  if(!lastGroups.length){box.innerHTML='<div class="rankrow">Ainda sem placar - seja o primeiro!</div>';return;}
+  const groups=lastGroups.slice().sort((a,b)=> rankMode==='xp' ? b.xp-a.xp : b.best-a.best);
+  const mk=lastMyName?lastMyName.trim().toLowerCase():null;
+  const medals=['🥇','🥈','🥉'];
+  groups.slice(0,10).forEach((g,i)=>{
+    const row=document.createElement('div');
+    const isMe=mk&&(g.nome.trim().toLowerCase()===mk);
+    row.className='rankrow clickable'+(isMe?' me':'');
+    const pos=i<3?('<span class="medal-pos">'+medals[i]+'</span>'):('<span class="pos">'+(i+1)+'º</span>');
+    const tries=g.tentativas>1?'<span class="tries">'+g.tentativas+'x</span>':'';
+    const metric = rankMode==='xp'
+      ? '<b>'+g.xp+' XP</b> <small class="alt">'+g.best+' pts</small>'
+      : '<b>'+g.best+' pts</b> <small class="alt">'+g.xp+' XP</small>';
+    row.innerHTML='<span>'+pos+'<span class="av-s">'+g.av+'</span>'+g.nome+tries+'</span><span class="metric">'+metric+' ▾</span>';
+    const det=document.createElement('div'); det.className='rankdetail hide';
+    const sc=g.scores.slice().sort((a,b)=>b-a);
+    const media=Math.round(g.xp/g.tentativas);
+    det.innerHTML='<div class="rd-row"><b>'+g.tentativas+'</b> tentativa'+(g.tentativas>1?'s':'')+'</div>'+
+      '<div class="rd-row">Melhor: <b>'+g.best+' pts</b>'+(g.grade!=null&&g.grade!==''?' · nota '+g.grade:'')+'</div>'+
+      '<div class="rd-row">XP acumulada: <b>'+g.xp+'</b></div>'+
+      '<div class="rd-row">Média: <b>'+media+' pts</b></div>'+
+      '<div class="rd-row rd-scores">Pontuações: '+sc.slice(0,8).join(' · ')+(sc.length>8?' …':'')+'</div>';
+    row.onclick=()=>{det.classList.toggle('hide')};
+    box.appendChild(row); box.appendChild(det);
+  });
+}
+async function autoSave(){
+  const myKey='k'+Date.now()+Math.random().toString(36).slice(2,6);
+  const entry={k:myKey,n:playerName,a:chosenAv,s:score,g:Math.round(correctCount/PER_PARTIDA*100)/10,t:Date.now()};
+  pushLocal(entry);
+  if(SHEET_URL){
+    $('rankBox').classList.remove('hide');$('rstatus').textContent='Salvando no placar da turma...';
+    try{
+      await fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(entry)});
+      const res=await fetch(SHEET_URL+'?t='+Date.now());
+      const data=await res.json();
+      const list=(data.rows||data).map(r=>({k:r.k,n:r.n,a:r.a,s:Number(r.s),g:r.g}));
+      if(!list.find(r=>r.k===myKey))list.push(entry);
+      renderRank(list,playerName,'✅ Salvo! Placar online da turma');
+      return;
+    }catch(e){renderRank(localRank(),playerName,'⚠️ Sem conexao - salvo neste aparelho');return}
+  }
+  renderRank(localRank(),playerName,'📱 Salvo neste aparelho');
+}
+$('seeRank').onclick=async()=>{
+  show('result');
+  $('medal').textContent='🏆';$('bigScore').textContent='—';
+  $('recordLine').classList.remove('big');$('recordLine').textContent='';
+  $('stars').textContent='';$('patente').textContent='';$('pctAcerto').textContent='';
+  $('rmsg').textContent='Placar dos exploradores';
+  $('stCorrect').textContent='—';$('stStreak').textContent='—';$('stTime').textContent='—';
+  $('badges').innerHTML='';$('revBox').classList.add('hide');
+  if(SHEET_URL){
+    try{const res=await fetch(SHEET_URL+'?t='+Date.now());const data=await res.json();
+      const list=(data.rows||data).map(r=>({k:r.k,n:r.n,a:r.a,s:Number(r.s),g:r.g}));
+      renderRank(list,null,'🌐 Placar online da turma');return;
+    }catch{renderRank(localRank(),null,'⚠️ Sem conexao - placar local');return}
+  }
+  renderRank(localRank(),null,'📱 Placar deste aparelho');
+};
+
+/* ---------- REVISAO ---------- */
+$('revBtn').onclick=()=>{
+  const box=$('revBox'); if(!box.classList.contains('hide')){box.classList.add('hide');return}
+  const list=$('revlist');list.innerHTML='';
+  const errs=log.filter(l=>l.your!==l.correct);
+  if(!errs.length){list.innerHTML='<div class="revq"><div class="qq">🎉 Voce nao errou nenhuma! Mandou muito bem.</div></div>'}
+  else errs.forEach(l=>{
+    const d=document.createElement('div');d.className='revq';
+    let h='<div class="qq">'+l.q+'</div>';
+    h+='<span class="ans right">✓ Certo: '+l.opts[l.correct]+'</span>';
+    if(l.your>=0)h+='<span class="ans your">✗ Voce marcou: '+l.opts[l.your]+'</span>';
+    else h+='<span class="ans your">⏰ Voce nao respondeu a tempo</span>';
+    d.innerHTML=h;list.appendChild(d);
+  });
+  box.classList.remove('hide');
+};
+$('shareWa').onclick=()=>{
+  const txt='🌍 '+QUIZ_CONFIG.titulo+' - '+QUIZ_CONFIG.livro+'!\n'+chosenAv+' '+playerName+' fez '+score+' pontos ('+correctCount+'/'+PER_PARTIDA+' acertos)!\nSera que voce me supera? Joga aqui: '+window.location.href;
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+};
+function applyConfig(){
+  const c=QUIZ_CONFIG;
+  document.title=c.titulo+(c.livro?(' - '+c.livro):'');
+  const eb=document.querySelector('.eyebrow'); if(eb)eb.textContent=c.eyebrow||(c.autor?('Diário de Bordo · '+c.autor):'Quiz de Leitura');
+  const h1=document.querySelector('h1');
+  if(h1){
+    if(c.tituloDestaque && c.titulo.indexOf(c.tituloDestaque)>=0){
+      const pa=c.titulo.split(c.tituloDestaque);
+      h1.innerHTML=pa[0]+'<span class="big">'+c.tituloDestaque+'</span>'+(pa[1]||'');
+    } else h1.textContent=c.titulo;
+  }
+  const sub=document.querySelector('.subtitle'); if(sub)sub.textContent=c.livro;
+  const rt=document.querySelector('.route');
+  if(rt && c.rota && c.rota.length>1){
+    rt.innerHTML='<b>'+c.rota[0]+'</b> → '+c.rota.slice(1,-1).join(' → ')+' → <b>'+c.rota[c.rota.length-1]+'</b>';
+  }
+  const sb=document.getElementById('start'); if(sb)sb.textContent=(c.botao||'Zarpar! ⚓')+' ('+PER_PARTIDA+' perguntas)';
+  const ql=document.getElementById('qlabel'); if(ql)ql.innerHTML='Pergunta <b>1</b>/'+PER_PARTIDA;
+}
+document.querySelectorAll('#rankmode .rm').forEach(b=>b.onclick=()=>{rankMode=b.dataset.m;document.querySelectorAll('#rankmode .rm').forEach(x=>x.classList.toggle('on',x===b));drawRank()});
+$('start').onclick=startGame;
+$('again').onclick=()=>{initHome();show('home')};
+applyConfig();
+initHome();
+
+</script>
+</body>
+</html>
